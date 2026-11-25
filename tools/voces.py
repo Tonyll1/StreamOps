@@ -28,6 +28,8 @@ PIPER = HF + "/rhasspy/piper-voices/resolve/main/es/{loc}/{name}/{q}/{loc}-{name
 BASE_F = "es_MX-claude-high"  # base femenina
 BASE_M = "es_MX-ald-medium"  # base masculina
 
+VALORANT = "astra breach brimstone chamber clove cypher deadlock fade gekko harbor iso jett kayo killjoy neon omen phoenix raze reyna sage skye sova tejo viper vyse yoru".split()
+
 # nombre -> ("piper", url_onnx)  |  ("rvc", [urls], base, tono en semitonos)
 CATALOG: dict[str, tuple] = {
     "es_MX-claude-high": ("piper", PIPER.format(loc="es_MX", name="claude", q="high")),
@@ -36,6 +38,38 @@ CATALOG: dict[str, tuple] = {
     "es_ES-davefx-medium": ("piper", PIPER.format(loc="es_ES", name="davefx", q="medium")),
     "es_MX-laura-high": ("piper", HF + "/HirCoir/Piper-TTS-Laura/resolve/main/es_MX-laura-high.onnx"),
     "es_ES-glados-medium": ("piper", HF + "/csukuangfj/vits-piper-es_ES-glados-medium/resolve/main/es_ES-glados-medium.onnx"),
+    # Voces Piper de personajes hechas por fans. Las «en-» hablan inglés: leen el español con acento.
+    "raton-jacky": ("piper", "https://github.com/ikarius6/jacky-voz-tts/raw/main/jacky.onnx"),
+    "en-torreta-portal": ("piper", "https://github.com/hyessn/turret-tts-model/raw/main/turret.onnx"),
+    "en-anunciador-portal": ("piper", "https://github.com/Davis8483/portal2-announcer-piper-tts/raw/main/announcer.onnx"),
+    "en-combine": ("piper", "https://github.com/robit-man/combine_overwatch_onnx/raw/main/overwatch.onnx"),
+    "en-hal9000": ("piper", "https://github.com/dividebysandwich/piper-voice-models/raw/main/HAL9000-denoised/en_US-hal_6409-medium.onnx"),
+    "en-k9": ("piper", "https://github.com/hopkira/k9_piper_voice/raw/main/k9_model.onnx"),
+    "en-bmo": ("piper", "https://github.com/1liminal1/xiaozhi-esphome/raw/main/piper-voices/en_US-bmo_voice.onnx"),
+    "en-bt7274": ("piper", "https://github.com/DJMalachite/PiperVoiceModels/raw/main/Titanfall2/BT7274/BT7274.onnx"),
+    "en-scorch": ("piper", "https://github.com/DJMalachite/PiperVoiceModels/raw/main/Titanfall2/ScorchAI/ScorchAI.onnx"),
+    "en-pda-subnautica": ("piper", "https://github.com/DJMalachite/PiperVoiceModels/raw/main/Subnautica/PDA/PDA.onnx"),
+    "en-shodan": ("piper", "https://github.com/TacitusCornelius/shodan-piper-tts/raw/main/shodan_remake/en_US-shodan_remake-medium.onnx"),
+    "en-xerxes": ("piper", "https://github.com/TacitusCornelius/shodan-piper-tts/raw/main/Xerxes_medium/en_US-xerxes-medium.onnx"),
+    "en-colossus": ("piper", "https://github.com/TacitusCornelius/colossus-tts-voice/raw/main/voices/colossus-medium/en_US-colossus-medium.onnx"),
+    "en-cabal": ("piper", "https://github.com/jappeace-sloth/cabal-voice/raw/master/en_US-cabal-medium.onnx"),
+    "en-zani": ("piper", "https://github.com/MohitEvil/Zani_Voice_model/raw/main/zani.onnx"),
+    "en-glados": ("piper", HF + "/AIHeaven/piper_unofficial_voices/resolve/main/en_US/en_us-glados-high/en_us-glados-high.onnx"),
+    "en-wheatley": ("piper", HF + "/davet2001/wheatley1/resolve/main/wheatley1.onnx"),
+    "en-cave-johnson": ("piper", HF + "/davet2001/cave_johnson1/resolve/main/cave_johnson1.onnx"),
+    "en-jarvis": ("piper", HF + "/jgkawell/jarvis/resolve/main/en/en_GB/jarvis/high/jarvis-high.onnx"),
+    "en-optimus": ("piper", HF + "/crazygiscool/optimus-piper-voice/resolve/main/optimus-final.onnx"),
+    "en-chitti": ("piper", HF + "/swqg-messiah/kusaal_chitti_piper/resolve/main/chitti.onnx"),
+    "en-ahsoka": ("piper", HF + "/crazygiscool/ahsoka-piper-voice/resolve/main/ahsoka-final.onnx"),
+    "en-la-muerte": ("piper", HF + "/drewThomasson/piper_tts_finetune_death_from_puss_and_boots/resolve/main/en_US-death-high_onnx/en_US-death-high.onnx"),
+    "en-kronk": ("piper", HF + "/russdill/kronk/resolve/main/en/en_US/kronk/medium/kronk-medium.onnx"),
+    "en-rocket": ("piper", HF + "/AkumaVenom/RocketRacoon-Piper-US-Medium/resolve/main/rocket_racoon.onnx"),
+    "en-cheetah": ("piper", HF + "/HAV0X1014/KF-PiperTTS-voices/resolve/main/Cheetah/en_US-cheetah-high.onnx"),
+    "en-silverfox": ("piper", HF + "/HAV0X1014/KF-PiperTTS-voices/resolve/main/silverfox/en_US-silverfox-medium.onnx"),
+    "en-megumin": ("piper", HF + "/semioniy/piper-en_US-megumin-medium/resolve/main/model.onnx"),
+    "en-tomoko": ("piper", HF + "/quarterturn/kuroki_tomoko_en_piper/resolve/main/kuroki_tomoko.onnx"),
+    "en-scaramouche": ("piper", HF + "/jstlntch/Scaramouche_or_Wanderer_voice_model_for_piper/resolve/main/model.onnx"),
+    **{f"en-val-{a}": ("piper", HF + f"/fox3000foxy/piper-checkpoints-{a}/resolve/main/{a}.onnx") for a in VALORANT},
     "miku": ("rvc", [HF + "/Alejo520/ModelsByAlejo520/resolve/main/hatsune-miku-Latin-Spanish.zip"], BASE_F, 4),
     "miku-jp": ("rvc", [HF + "/binant/Hatsune_Miku__RVC_v2_/resolve/main/model.pth",
                         HF + "/binant/Hatsune_Miku__RVC_v2_/resolve/main/model.index"], BASE_F, 6),
