@@ -257,13 +257,43 @@ $("voiceFilter").addEventListener("click", (e) => {
   $("voiceFilter").querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === e.target));
   renderVoices();
 });
+// ---- afinador de voces de personaje ----------------------------------------
+let tuneVoice = "";
+function showTune() {
+  $("o_tunePitch").textContent = ($("tunePitch").value > 0 ? "+" : "") + $("tunePitch").value + " semitonos";
+  $("o_tuneSpeed").textContent = Math.round($("tuneSpeed").value * 100) + "%";
+  $("o_tuneIndex").textContent = Math.round($("tuneIndex").value * 100) + "%";
+}
+async function loadTuner(name) {
+  const voice = voices.find((v) => v.name === name);
+  if (!voice || voice.kind !== "rvc") { $("tuner").hidden = true; tuneVoice = ""; return; }
+  const spec = await api("GET", "/api/voice/" + encodeURIComponent(name));
+  tuneVoice = name;
+  $("tuneName").textContent = name;
+  $("tunePitch").value = (spec.rvc && spec.rvc.pitch) || 0;
+  $("tuneSpeed").value = (1 / (spec.length_scale || 1)).toFixed(2);
+  $("tuneIndex").value = spec.rvc && spec.rvc.index_influence !== undefined ? spec.rvc.index_influence : 0.66;
+  $("tuneBase").innerHTML = voices.filter((v) => v.kind === "piper").map((v) => `<option ${v.name === spec.piper ? "selected" : ""}>${esc(v.name)}</option>`).join("");
+  showTune();
+  $("tuner").hidden = false;
+}
+async function saveTune() {
+  if (!tuneVoice) return;
+  await api("PUT", "/api/voice/" + encodeURIComponent(tuneVoice), { pitch: Number($("tunePitch").value), length_scale: Number((1 / $("tuneSpeed").value).toFixed(3)), index_influence: Number($("tuneIndex").value), piper: $("tuneBase").value });
+  toast("Voz afinada");
+}
+["tunePitch", "tuneSpeed", "tuneIndex"].forEach((id) => { $(id).addEventListener("input", showTune); $(id).addEventListener("change", saveTune); });
+$("tuneBase").addEventListener("change", saveTune);
+$("tunePlay").onclick = () => tuneVoice && testVoice(tuneVoice);
+
 async function testVoice(name) {
   const r = await api("POST", "/api/tts/test", { text: $("tts_test_text").value, voice: name });
   toast(r.ok ? `Probando "${name}"…` : "No se pudo: revisa que el TTS esté activo y sin silenciar", !r.ok);
 }
 $("voiceGrid").addEventListener("click", async (e) => {
   const play = e.target.closest("[data-play]");
-  if (play) { e.stopPropagation(); return testVoice(play.dataset.play); }
+  if (play) { e.stopPropagation(); loadTuner(play.dataset.play); return testVoice(play.dataset.play); }
+  if (e.target.closest("[data-voice]")) loadTuner(e.target.closest("[data-voice]").dataset.voice);
   const chip = e.target.closest("[data-voice]");
   if (!chip) return;
   config = await api("PUT", "/api/config", { tts: { voice: chip.dataset.voice } });

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import random
 import time
 import copy
@@ -13,7 +14,7 @@ from aiohttp import web
 
 from .app import App
 from .bus import Event
-from .config import MEDIA, WEB
+from .config import VOICES, MEDIA, WEB
 from .connectors.heartrate import scan_ble
 from .rules import media_kind
 
@@ -131,9 +132,39 @@ def build_web_app(app: App) -> web.Application:
     async def voices(_request: web.Request) -> web.Response:
         return web.json_response(app.tts.voices())
 
+    def _voice_file(request: web.Request):
+        name = request.match_info["name"]
+        path = (VOICES / f"{name}.voice.json").resolve()
+        if path.parent != VOICES.resolve() or not path.is_file():
+            raise web.HTTPNotFound(text="Esa voz no es de personaje o no existe")
+        return path
+
+    @routes.get("/api/voice/{name}")
+    async def voice_get(request: web.Request) -> web.Response:
+        return web.json_response(json.loads(_voice_file(request).read_text(encoding="utf-8")))
+
+    @routes.put("/api/voice/{name}")
+    async def voice_put(request: web.Request) -> web.Response:
+        """Afinación de una voz de personaje: tono, velocidad, voz base y fuerza del timbre."""
+        path = _voice_file(request)
+        body = await request.json()
+        spec = json.loads(path.read_text(encoding="utf-8"))
+        rvc = spec.setdefault("rvc", {})
+        if "pitch" in body:
+            rvc["pitch"] = max(-24, min(24, int(body["pitch"])))
+        if "index_influence" in body:
+            rvc["index_influence"] = max(0.0, min(1.0, float(body["index_influence"])))
+        if "length_scale" in body:
+            spec["length_scale"] = max(0.5, min(2.0, float(body["length_scale"])))
+        if body.get("piper") and (VOICES / f"{body['piper']}.onnx").is_file():
+            spec["piper"] = str(body["piper"])
+        path.write_text(json.dumps(spec, ensure_ascii=False, indent=2), encoding="utf-8")
+        return web.json_response(spec)
+
     @routes.post("/api/tts/test")
     async def tts_test(request: web.Request) -> web.Response:
         body = await request.json()
+        app.tts.clear()  # una prueba no espera a que termine lo que esté sonando
         queued = app.tts.say(body.get("text") or "Hola, esta es una prueba de voz.", voice=body.get("voice") or None)
         return web.json_response({"ok": queued})
 

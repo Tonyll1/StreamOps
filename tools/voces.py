@@ -204,6 +204,11 @@ def install_rvc(name: str, urls: list[str], base: str, pitch: int) -> None:
         else:
             raise RuntimeError(f"extensión no reconocida: {url}")
     spec = {"piper": base, "rvc": {"model": f"{name}.pth", "pitch": pitch}}
+    # Afinación medida (tools/afinar_voces.py): voz base, tono y velocidad de cada personaje.
+    tuning = Path(__file__).with_name("afinacion.json")
+    tune = json.loads(tuning.read_text(encoding="utf-8")).get(name) if tuning.is_file() else None
+    if tune and (VOICES / f"{tune['piper']}.onnx").is_file():
+        spec["piper"], spec["length_scale"], spec["rvc"]["pitch"] = tune["piper"], tune["length_scale"], tune["pitch"]
     if has_index:
         spec["rvc"]["index"] = f"{name}.index"
     spec_file.write_text(json.dumps(spec, indent=2), encoding="utf-8")

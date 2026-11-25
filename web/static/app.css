@@ -151,6 +151,9 @@ input[type=range]::-webkit-slider-thumb:hover { transform:scale(1.15); }
 .voice .star { width:11px; height:11px; color:var(--mute); fill:currentColor; stroke:none; }
 .testbox { display:flex; gap:8px; margin-top:14px; } .testbox input { margin:0; }
 
+/* afinador */
+.tuner { margin-top:14px; padding-top:14px; border-top:1px solid var(--line); } .tuner[hidden] { display:none; } .tuner #tuneName { color:var(--accent); }
+
 /* lectura y voces por usuario */
 .readrows { display:flex; flex-direction:column; gap:6px; }
 .readrow { display:grid; grid-template-columns:190px minmax(0,1fr); gap:8px 10px; align-items:center; padding:9px 10px; border-radius:8px; background:var(--bg); border:1px solid var(--line); }

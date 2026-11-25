@@ -164,6 +164,17 @@
               <div id="voiceGrid" class="voices"></div>
               <div class="testbox"><input id="tts_test_text" value="Hola chat, esta es una prueba de voz."><button class="btn primary" id="btnTtsTest"><svg class="ic"><use href="#i-play"/></svg>Probar</button></div>
               <input type="hidden" id="tts_voice">
+              <div class="tuner" id="tuner" hidden>
+                <div class="card-h"><h2>Afinar <span id="tuneName"></span> <small>se guarda al mover; pulsa Probar para oírla</small></h2>
+                  <button class="btn tiny primary" id="tunePlay"><svg class="ic"><use href="#i-play"/></svg>Probar</button></div>
+                <div class="grid g-2">
+                  <label class="range">Tono <output id="o_tunePitch"></output><input type="range" id="tunePitch" min="-12" max="12" step="1"></label>
+                  <label class="range">Velocidad <output id="o_tuneSpeed"></output><input type="range" id="tuneSpeed" min="0.7" max="1.4" step="0.05"></label>
+                  <label class="range">Fuerza del timbre <output id="o_tuneIndex"></output><input type="range" id="tuneIndex" min="0" max="1" step="0.05"></label>
+                  <label>Voz base<select id="tuneBase"></select></label>
+                </div>
+                <p class="hint">Tono: súbelo si suena demasiado grave para el personaje, bájalo si suena chillón. Voz base: prueba la femenina para personajes agudos y la masculina para graves.</p>
+              </div>
             </div>
             <div class="card">
               <div class="card-h"><h2>Qué se lee <small>frase, mínimo y voz por tipo de evento</small></h2></div>

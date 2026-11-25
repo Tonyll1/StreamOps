@@ -47,7 +47,9 @@ class TTS:
         self._piper_cache: dict[str, object] = {}
         self._current: threading.Event | None = None
         self._rvc = None
+        self._rvc_lock = threading.Lock()
         threading.Thread(target=self._worker, name="tts", daemon=True).start()
+        threading.Thread(target=self._warm_up, name="tts-precarga", daemon=True).start()
 
     # ---- catálogo -------------------------------------------------------
     def voices(self) -> list[dict]:
@@ -122,10 +124,12 @@ class TTS:
         self.skip()
 
     def _worker(self) -> None:
+        playing: threading.Event | None = None
         while True:
             text, voice = self._queue.get()
             if self.app.mixer.muted:
                 continue
+            # La frase se genera mientras aún suena la anterior, para que no haya huecos.
             try:
                 samples, rate = self.synthesize(text, voice)
             except Exception:
@@ -133,17 +137,21 @@ class TTS:
                 continue
             if samples is None:
                 continue
+            if playing is not None:
+                playing.wait(timeout=60)
+                self.app.notify({"type": "tts_end"})
+            if self.app.mixer.muted:
+                playing = None
+                continue
             # Avisa a los overlays (subtítulos) de lo que se va a leer.
             shown = self.find_voice(voice) if voice else None
             self.app.notify({
                 "type": "tts", "text": text, "seconds": round(len(samples) / rate, 2),
                 "voice": shown or self.app.config["tts"].get("voice", ""),
             })
-            done = self.app.mixer.play(
+            playing = self.app.mixer.play(
                 resample(to_stereo(samples), rate), kind="tts", volume=float(self.app.config["tts"]["volume"])
             )
-            done.wait(timeout=60)
-            self.app.notify({"type": "tts_end"})
 
     # ---- síntesis -------------------------------------------------------
     def _piper(self, name: str):
@@ -183,8 +191,30 @@ class TTS:
         return samples, rate
 
     def _convert(self, samples: np.ndarray, rate: int, rvc_spec: dict) -> tuple[np.ndarray, int]:
-        if self._rvc is None:
-            from .rvc import RvcConverter
+        with self._rvc_lock:
+            if self._rvc is None:
+                from .rvc import RvcConverter
 
-            self._rvc = RvcConverter()
-        return self._rvc.convert(samples, rate, rvc_spec)
+                self._rvc = RvcConverter()
+            return self._rvc.convert(samples, rate, rvc_spec)
+
+    def _warm_up(self) -> None:
+        """Carga en segundo plano el motor de personajes y la voz por defecto, para que la primera frase no tarde."""
+        try:
+            spec = self._resolve(None)
+            if spec is None:
+                return
+            self._piper(spec["piper"])
+            if spec.get("rvc") or any(VOICES.glob("*.voice.json")):
+                silence = (np.random.default_rng(0).standard_normal(8000) * 0.01).astype(np.float32)
+                if spec.get("rvc"):
+                    self._convert(silence, 16000, spec["rvc"])
+                else:
+                    with self._rvc_lock:
+                        if self._rvc is None:
+                            from .rvc import RvcConverter
+
+                            self._rvc = RvcConverter()
+            logger.info("[TTS] Voces precargadas")
+        except Exception:
+            logger.warning("[TTS] No se pudo precargar la voz", exc_info=True)
