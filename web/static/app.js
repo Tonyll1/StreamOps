@@ -34,7 +34,8 @@ function show(view) {
   document.querySelectorAll("#nav a").forEach((a) => a.classList.toggle("active", a.dataset.view === view));
   [$("viewTitle").textContent, $("viewSub").textContent] = VIEWS[view];
   if (location.hash.slice(1) !== view) history.replaceState(null, "", "#" + view);
-  if (view === "overlays") renderOverlays();
+  // Las vistas previas son páginas vivas: solo existen mientras se ve la sección.
+  if (view === "overlays") renderOverlays(); else if (overlaysDrawn) { $("overlays").innerHTML = ""; overlaysDrawn = false; }
   $("views").scrollTop = 0;
 }
 $("nav").addEventListener("click", (e) => { const a = e.target.closest("a"); if (a) show(a.dataset.view); });
@@ -109,13 +110,14 @@ function setStatus(connectors) {
 const shown = {};
 function countUp(id, target) {
   const el = $(id), from = shown[id] || 0;
+  if (!el) return;
   if (from === target) return;
   shown[id] = target;
   const tile = el.closest(".tile");
   if (tile && target > from) { tile.classList.remove("bump"); void tile.offsetWidth; tile.classList.add("bump"); }
   const start = performance.now();
   const step = (now) => {
-    const t = Math.min(1, (now - start) / 600), eased = 1 - Math.pow(1 - t, 3);
+    const t = Math.min(1, (now - start) / 350), eased = 1 - Math.pow(1 - t, 3);
     el.textContent = fmt(from + (target - from) * eased);
     if (t < 1) requestAnimationFrame(step);
   };
@@ -131,7 +133,7 @@ function setBpm(bpm) {
 function renderMiniTop(rows) {
   rows = (rows || []).slice(0, 5);
   const max = rows.length ? rows[0].value : 1;
-  $("miniTop").innerHTML = rows.map((r, i) => `<div class="mt" style="animation-delay:${i * 40}ms"><span class="pos">${i + 1}</span><span class="nm">${esc(r.name)}</span>
+  $("miniTop").innerHTML = rows.map((r, i) => `<div class="mt"><span class="pos">${i + 1}</span><span class="nm">${esc(r.name)}</span>
     <span class="barx"><i style="transform:scaleX(${(r.value / max).toFixed(3)})"></i></span><span class="vl">${fmt(r.value)}</span></div>`).join("") || '<div class="empty">Aún sin donaciones en esta sesión</div>';
 }
 const LABEL = {
@@ -176,7 +178,7 @@ setTimeout(() => { if (feedEmpty) $("feed").innerHTML = '<div class="empty">Espe
 function renderVoices() {
   const q = $("voiceSearch").value.trim().toLowerCase();
   const list = voices.filter((v) => (voiceFilter === "all" || v.kind === voiceFilter) && v.name.toLowerCase().includes(q));
-  $("voiceGrid").innerHTML = list.map((v, i) => `<div class="voice ${v.kind} ${v.name === config.tts.voice ? "sel" : ""}" data-voice="${esc(v.name)}" style="animation-delay:${Math.min(i, 24) * 14}ms" title="${esc(v.name)}">
+  $("voiceGrid").innerHTML = list.map((v, i) => `<div class="voice ${v.kind} ${v.name === config.tts.voice ? "sel" : ""}" data-voice="${esc(v.name)}" title="${esc(v.name)}">
     <span class="va">${esc(v.name.replace(/^es_[A-Z]{2}-/, "").slice(0, 2))}</span><span>${esc(v.name.replace(/^es_([A-Z]{2})-(.*?)-(?:x_low|low|medium|high)$/, "$2 ($1)"))}</span>
     ${v.kind === "rvc" ? '<svg class="star" viewBox="0 0 24 24"><use href="#i-star"/></svg>' : ""}<button class="play" data-play="${esc(v.name)}" title="Escuchar">${icon("play")}</button></div>`).join("")
     || '<div class="empty">Ninguna voz coincide. Instala más con tools\\voces.py</div>';
@@ -246,7 +248,7 @@ function renderRules() {
   $("navRules").textContent = rules.length || "";
   $("rules").innerHTML = rules.map((r, ri) => {
     const evLabel = (EVENTS.find((e) => e[0] === r.event) || ["", r.event])[1];
-    return `<div class="rule ${openRules.has(ri) ? "open" : ""} ${r.enabled === false ? "off" : ""}" style="animation-delay:${ri * 50}ms">
+    return `<div class="rule ${openRules.has(ri) ? "open" : ""} ${r.enabled === false ? "off" : ""}">
     <div class="rule-h" data-toggle="${ri}"><span class="tag ${esc(r.event)}">${esc(evLabel)}</span><span class="rn">${esc(r.name)}</span>
       <span class="flow"><span class="arrow">→</span>${(r.actions || []).map((a) => `<span class="achip">${esc(ACTION_TYPES[a.type] || a.type)}</span>`).join("") || '<span class="achip">sin acciones</span>'}</span>
       <svg class="ic chev"><use href="#i-chev"/></svg></div>
@@ -308,7 +310,7 @@ async function loadMedia() {
   $("media").innerHTML = media.map((m, i) => {
     const src = "/media/" + encodeURIComponent(m.name);
     const thumb = m.kind === "image" ? `<img src="${src}" loading="lazy">` : m.kind === "video" ? `<video src="${src}#t=0.5" muted preload="metadata"></video>` : `<svg class="ic xl"><use href="#i-vol"/></svg>`;
-    return `<div class="mtile" style="animation-delay:${Math.min(i, 20) * 25}ms"><div class="th">${thumb}</div><span class="kd">${m.kind}</span>
+    return `<div class="mtile"><div class="th">${thumb}</div><span class="kd">${m.kind}</span>
       ${m.kind === "audio" ? `<button class="btn icon tiny ply" data-play="${esc(m.name)}" title="Escuchar">${icon("play")}</button>` : ""}
       <button class="btn icon tiny danger del" data-del="${esc(m.name)}" title="Eliminar">${icon("x")}</button>
       <div class="inf"><b title="${esc(m.name)}">${esc(m.name)}</b><small>${(m.size / 1048576).toFixed(1)} MB</small></div></div>`;

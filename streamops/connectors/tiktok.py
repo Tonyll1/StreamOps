@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from ..bus import Event
@@ -101,8 +102,12 @@ class TikTokConnector(Connector):
             await bus.publish(Event(type="join", **_who(event.user)))
 
         try:
-            if not await client.is_live():
-                raise RuntimeError(f"@{username} no está en vivo")
+            # Espera a que empiece el directo sin tratarlo como error.
+            while not await client.is_live():
+                if self.status != "esperando":
+                    await self.set_status("esperando", f"@{username} no está en vivo; se conectará al empezar")
+                await asyncio.sleep(15)
+            await self.set_status("conectando", f"@{username}")
             await client.connect()
         finally:
             try:
