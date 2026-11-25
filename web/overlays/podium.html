@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Podio</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  .box { display:inline-block; text-align:center; }
+  #pod { display:flex; align-items:flex-end; gap:8px; min-height:150px; }
+  .p { width:118px; display:flex; flex-direction:column; align-items:center; gap:4px; animation:in-up .4s var(--ease) backwards; }
+  .p .avatar { width:52px; height:52px; font-size:20px; border:3px solid var(--c); } .p b { font-size:14px; max-width:112px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .p .v { font-size:13px; color:var(--dim); font-weight:700; }
+  .p .base { width:100%; border-radius:8px 8px 0 0; background:var(--panel); border:1px solid var(--line); border-bottom:0; border-top:3px solid var(--c); display:grid; place-items:center; font-size:26px; font-weight:800; color:var(--c); }
+  .p1 { --c:var(--gold); order:2; } .p1 .base { height:84px; } .p2 { --c:#cfd3da; order:1; animation-delay:.08s; } .p2 .base { height:60px; } .p3 { --c:#d08a4a; order:3; animation-delay:.16s; } .p3 .base { height:42px; }
+  .empty { padding:14px 18px; color:var(--dim); font-size:14px; }
+</style>
+</head>
+<body>
+<div class="box"><div class="title" id="title"></div><div id="pod"></div></div>
+<script src="/static/overlay.js"></script>
+<script>
+  // Podio con los tres primeros de la métrica elegida.
+  const S = StreamOps, metric = S.p("metric", "coins"), scope = S.p("scope") === "all" ? "all" : "session";
+  const names = { coins: "Top donadores", likes: "Top likes", shares: "Top compartidos", comments: "Top chat" };
+  document.getElementById("title").textContent = S.p("title", names[metric] || "Podio");
+  let sig = "";
+  S.connect((msg) => {
+    if (msg.type !== "state") return;
+    const rows = ((msg[scope] && msg[scope][metric]) || []).slice(0, 3), next = rows.map((r) => r.name + r.value).join("|");
+    if (next === sig) return;
+    const order = sig.split("|").map((x) => x.replace(/[\d.]+$/, "")).join() !== rows.map((r) => r.name).join(); sig = next;
+    document.getElementById("pod").innerHTML = rows.map((r, i) => `<div class="p p${i + 1}" ${order ? "" : 'style="animation:none"'}>
+      ${r.avatar ? `<img class="avatar" src="${S.esc(r.avatar)}" referrerpolicy="no-referrer">` : `<span class="avatar">${S.esc((r.name || "?").charAt(0).toUpperCase())}</span>`}
+      <b>${S.esc(r.name)}</b><span class="v num">${S.fmt(r.value)}</span><div class="base">${i + 1}</div></div>`).join("") || '<div class="panel empty">Aún sin datos</div>';
+  });
+</script>
+</body>
+</html>

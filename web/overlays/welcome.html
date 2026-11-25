@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Bienvenidas</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  #list { display:flex; flex-direction:column; gap:6px; align-items:flex-start; }
+  .w { display:inline-flex; align-items:center; gap:10px; padding:6px 16px 6px 7px; border-radius:99px; animation:in-left .35s var(--ease); font-size:16px; }
+  .w.out { animation:out-fade .4s ease forwards; } .w img.g { height:30px; } .w .avatar { width:30px; height:30px; }
+</style>
+</head>
+<body>
+<div id="list"></div>
+<script src="/static/overlay.js"></script>
+<script>
+  // Saludo breve para quien entra al directo (o te sigue), con tu GIF y sonido opcionales.
+  const S = StreamOps, list = document.getElementById("list"), type = S.p("type", "join"), seconds = S.num("seconds", 4), max = S.num("max", 3);
+  const text = S.p("text", type === "join" ? "¡Bienvenido, {user}!" : "¡Gracias, {user}!"), gif = S.p("gif"), sound = S.p("sound"), gap = S.num("gap", 2) * 1000;
+  const seen = new Set(); let last = 0;
+  S.connect((msg) => {
+    if (msg.type !== "event" || msg.event.type !== type) return;
+    const e = msg.event, key = e.platform + ":" + e.user_id;
+    if ((type === "join" && seen.has(key)) || Date.now() - last < gap) return;
+    seen.add(key); last = Date.now();
+    const el = document.createElement("div"); el.className = "panel w";
+    const pic = gif ? `<img class="g" src="${S.media(gif)}">` : e.avatar ? `<img class="avatar" src="${S.esc(e.avatar)}" referrerpolicy="no-referrer">` : `<span class="avatar">${S.esc((e.user || "?").charAt(0).toUpperCase())}</span>`;
+    el.innerHTML = pic + `<span>${S.esc(text).replace("{user}", `<b>${S.esc(e.user)}</b>`)}</span>`;
+    list.appendChild(el); S.sound(sound);
+    while (list.children.length > max) list.firstChild.remove();
+    setTimeout(() => { el.classList.add("out"); setTimeout(() => el.remove(), 400); }, seconds * 1000);
+  });
+</script>
+</body>
+</html>

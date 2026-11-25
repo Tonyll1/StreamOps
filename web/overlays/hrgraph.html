@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Gráfica de pulso</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  .box { width:min(420px,100%); padding:10px 14px 8px; }
+  .head { display:flex; align-items:baseline; justify-content:space-between; }
+  .bpm { font-size:34px; font-weight:800; line-height:1; } .bpm small { font-size:12px; color:var(--dim); margin-left:5px; letter-spacing:.08em; }
+  .mm { font-size:12px; color:var(--dim); font-weight:600; }
+  svg { width:100%; height:90px; display:block; margin-top:6px; } polyline { fill:none; stroke:var(--c,#ef5350); stroke-width:2.5; stroke-linejoin:round; stroke-linecap:round; vector-effect:non-scaling-stroke; }
+  .box.stale { opacity:.5; }
+</style>
+</head>
+<body>
+<div class="panel box stale" id="box"><div class="head"><span class="bpm num"><span id="bpm">--</span><small>BPM</small></span><span class="mm num" id="mm"></span></div>
+  <svg viewBox="0 0 300 90" preserveAspectRatio="none"><polyline id="line" points=""/></svg></div>
+<script src="/static/overlay.js"></script>
+<script>
+  // Historial de tus pulsaciones de los últimos minutos, con mínimo y máximo.
+  const S = StreamOps, box = document.getElementById("box"), keep = S.num("minutes", 3) * 60000, data = [];
+  let stale = null;
+  function color(bpm) { return bpm < 90 ? "#3ecf8e" : bpm < 120 ? "#ffd54a" : bpm < 150 ? "#ff6b35" : "#ef5350"; }
+  function draw() {
+    const now = Date.now();
+    while (data.length && now - data[0][0] > keep) data.shift();
+    if (!data.length) return;
+    const values = data.map((d) => d[1]), lo = Math.min(...values) - 4, hi = Math.max(...values) + 4;
+    document.getElementById("line").setAttribute("points", data.map(([t, v]) => `${(300 - (now - t) / keep * 300).toFixed(1)},${(88 - (v - lo) / (hi - lo) * 86).toFixed(1)}`).join(" "));
+    document.getElementById("mm").textContent = `mín ${lo + 4} · máx ${hi - 4}`;
+  }
+  setInterval(draw, 1000);
+  S.connect((msg) => {
+    const bpm = msg.type === "hr" ? msg.bpm : msg.type === "state" && !data.length ? msg.bpm : 0;
+    if (!bpm) return;
+    data.push([Date.now(), bpm]); document.getElementById("bpm").textContent = bpm;
+    box.style.setProperty("--c", color(bpm)); box.classList.remove("stale");
+    clearTimeout(stale); stale = setTimeout(() => box.classList.add("stale"), 15000);
+    draw();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Redes</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  .card { display:inline-flex; align-items:center; gap:11px; padding:8px 16px 8px 9px; }
+  .card.swap { animation:in-up .4s var(--ease); }
+  .ico { width:34px; height:34px; border-radius:8px; display:grid; place-items:center; font-weight:800; font-size:13px; background:var(--accent); color:var(--ink); }
+  .net { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--dim); } .handle { font-size:18px; font-weight:700; line-height:1.15; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="/static/overlay.js"></script>
+<script>
+  // Tus redes: una tarjeta que va rotando, o todas en fila.
+  const S = StreamOps, root = document.getElementById("root");
+  const items = S.p("items", "TikTok:@tuusuario|Twitch:tucanal|Kick:tucanal").split("|").map((i) => { const k = i.indexOf(":"); return k < 0 ? ["", i.trim()] : [i.slice(0, k).trim(), i.slice(k + 1).trim()]; }).filter((i) => i[1]);
+  const tints = { tiktok: "#ffffff", twitch: "#9b7bff", kick: "#53fc18", youtube: "#ff4b4b", instagram: "#e668a7", discord: "#7d8cff", x: "#ffffff", facebook: "#5b9dff" };
+  const card = ([net, handle]) => `<div class="panel card swap"><span class="ico" style="background:${tints[net.toLowerCase()] || "var(--accent)"}">${S.esc(net.slice(0, 2).toUpperCase() || "@")}</span><div><div class="net">${S.esc(net)}</div><div class="handle">${S.esc(handle)}</div></div></div>`;
+  if (S.p("layout") === "row") root.innerHTML = `<div class="row">${items.map(card).join("")}</div>`;
+  else { let i = 0; const draw = () => { root.innerHTML = card(items[i % items.length]); i++; }; draw(); if (items.length > 1) setInterval(draw, Math.max(2, S.num("seconds", 6)) * 1000); }
+</script>
+</body>
+</html>

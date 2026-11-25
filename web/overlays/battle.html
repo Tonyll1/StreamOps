@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Batalla</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  .box { width:min(620px,100%); padding:12px 14px; }
+  .names { display:flex; justify-content:space-between; font-weight:800; font-size:18px; margin-bottom:8px; }
+  .names span small { display:block; font-size:11px; font-weight:600; color:var(--dim); } .names .b { text-align:right; }
+  .bar { display:flex; height:26px; border-radius:7px; overflow:hidden; background:rgba(255,255,255,.1); }
+  .fa { background:var(--accent); transition:flex-basis .5s var(--ease); flex:0 0 50%; } .fb { background:var(--info); flex:1; }
+  .score { display:flex; justify-content:space-between; margin-top:6px; font-weight:800; font-size:20px; }
+  .title { margin-bottom:10px; }
+</style>
+</head>
+<body>
+<div class="panel box"><div class="title" id="title"></div>
+  <div class="names"><span class="a" id="na"></span><span class="b" id="nb"></span></div>
+  <div class="bar"><div class="fa" id="fa"></div><div class="fb"></div></div>
+  <div class="score num"><span id="sa">0</span><span id="sb">0</span></div></div>
+<script src="/static/overlay.js"></script>
+<script>
+  // Dos bandos compiten: el chat suma con una palabra clave y los regalos con su nombre.
+  const S = StreamOps, id = "streamops_battle_" + S.p("id", "1");
+  const A = { name: S.p("a", "Equipo rojo"), key: S.p("ka", "#rojo").toLowerCase(), gift: S.p("ga").toLowerCase() };
+  const B = { name: S.p("b", "Equipo azul"), key: S.p("kb", "#azul").toLowerCase(), gift: S.p("gb").toLowerCase() };
+  const giftPoints = S.num("coin", 1), chatPoints = S.num("chat", 1);
+  let score = [0, 0];
+  try { if (!S.flag("reset")) score = JSON.parse(localStorage.getItem(id)) || [0, 0]; } catch (err) { score = [0, 0]; }
+  document.getElementById("title").textContent = S.p("title", "");
+  document.getElementById("na").innerHTML = `${S.esc(A.name)}<small>${S.esc([A.key, A.gift].filter(Boolean).join(" · "))}</small>`;
+  document.getElementById("nb").innerHTML = `${S.esc(B.name)}<small>${S.esc([B.key, B.gift].filter(Boolean).join(" · "))}</small>`;
+  function draw() {
+    const total = score[0] + score[1];
+    document.getElementById("fa").style.flexBasis = (total ? Math.max(4, Math.min(96, score[0] / total * 100)) : 50) + "%";
+    document.getElementById("sa").textContent = S.fmt(score[0]); document.getElementById("sb").textContent = S.fmt(score[1]);
+  }
+  draw();
+  S.connect((msg) => {
+    if (msg.type !== "event") return;
+    const e = msg.event; let side = -1, points = 0;
+    if (e.type === "chat") { const t = e.text.toLowerCase(); side = A.key && t.includes(A.key) ? 0 : B.key && t.includes(B.key) ? 1 : -1; points = chatPoints; }
+    else if (e.type === "gift") { const g = (e.gift || "").toLowerCase(); side = A.gift && g.includes(A.gift) ? 0 : B.gift && g.includes(B.gift) ? 1 : -1; points = Math.max(1, e.value) * giftPoints; }
+    if (side < 0 || !points) return;
+    score[side] += points;
+    try { localStorage.setItem(id, JSON.stringify(score)); } catch (err) { /* sin almacenamiento */ }
+    draw();
+  });
+</script>
+</body>
+</html>

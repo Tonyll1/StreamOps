@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Nube de palabras</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  .box { width:min(520px,100%); padding:12px 16px; }
+  #cloud { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 14px; min-height:40px; }
+  #cloud span { font-weight:700; line-height:1.15; transition:font-size .4s var(--ease), opacity .4s; }
+  .empty { color:var(--dim); font-size:14px; }
+</style>
+</head>
+<body>
+<div class="panel box"><div class="title" id="title"></div><div id="cloud"></div></div>
+<script src="/static/overlay.js"></script>
+<script>
+  // Las palabras más repetidas del chat; las más usadas se ven más grandes.
+  const S = StreamOps, cloud = document.getElementById("cloud"), max = S.num("max", 18), minLen = S.num("minlen", 4), life = S.num("minutes", 5) * 60000;
+  const stop = new Set("para pero como esta este esto todo todos porque cuando donde desde hasta sobre entre tiene tengo bien muy más mas que con los las una uno del por the and you that".split(" "));
+  const colors = ["#ffffff", "var(--accent)", "var(--gold)", "var(--ok)", "var(--info)", "var(--pink)"], words = new Map();
+  document.getElementById("title").textContent = S.p("title", "El chat dice");
+  function draw() {
+    const now = Date.now();
+    for (const [w, d] of words) if (now - d.t > life) words.delete(w);
+    const top = [...words.entries()].sort((a, b) => b[1].n - a[1].n).slice(0, max), best = top.length ? top[0][1].n : 1;
+    cloud.innerHTML = top.sort((a, b) => a[0].localeCompare(b[0])).map(([w, d], i) => `<span style="font-size:${(15 + 27 * d.n / best).toFixed(0)}px;color:${colors[w.length % colors.length]};opacity:${(0.55 + 0.45 * d.n / best).toFixed(2)}">${S.esc(w)}</span>`).join("") || '<span class="empty">Esperando mensajes…</span>';
+  }
+  function add(e) {
+    if (e.type !== "chat" || e.text.startsWith("!")) return;
+    for (const w of new Set(e.text.toLowerCase().match(/[\p{L}\p{N}]+/gu) || [])) {
+      if (w.length < minLen || stop.has(w)) continue;
+      const d = words.get(w) || { n: 0, t: 0 }; d.n++; d.t = Date.now(); words.set(w, d);
+    }
+  }
+  setInterval(draw, 2000); draw();
+  S.connect((msg) => { if (msg.type === "event") { add(msg.event); draw(); } else if (msg.type === "history" && !words.size) { msg.events.forEach(add); draw(); } });
+</script>
+</body>
+</html>

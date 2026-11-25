@@ -47,6 +47,30 @@ DEFAULTS: dict = {
         "allow_voice_command": True,
         "user_voices": {},
         "blocked_words": [],
+        "voice_command": "!voz",
+        # Filtros del chat.
+        "chat_min_chars": 1,
+        "skip_links": True,
+        "skip_emoji_only": True,
+        "skip_repeats": True,
+        "user_cooldown": 0,
+        "ignored_users": [],
+        "only_users": [],
+        "platforms": {"tiktok": True, "twitch": True, "kick": True},
+        # Voz al azar (siempre la misma) para quien no tenga una asignada.
+        "random_voices": False,
+        "random_pool": "all",
+        # Qué eventos se leen, con qué frase, mínimo y voz.
+        "read": {
+            "chat": {"template": "{user} dice: {text}"},
+            "gift": {"enabled": False, "template": "{user} envió {count} {gift}", "min": 0, "gifts": "", "voice": "", "cooldown": 0},
+            "follow": {"enabled": False, "template": "{user} te siguió", "voice": "", "cooldown": 0},
+            "share": {"enabled": False, "template": "{user} compartió el directo", "voice": "", "cooldown": 0},
+            "like": {"enabled": False, "template": "{user} dio {count} likes", "min": 15, "voice": "", "cooldown": 10},
+            "sub": {"enabled": False, "template": "{user} se suscribió", "voice": "", "cooldown": 0},
+            "raid": {"enabled": False, "template": "{user} llegó con {count} personas", "voice": "", "cooldown": 0},
+            "join": {"enabled": False, "template": "Bienvenido {user}", "voice": "", "cooldown": 5},
+        },
     },
     "audio": {"alert_volume": 0.8, "device": ""},
     "hotkeys": {
@@ -118,9 +142,13 @@ class Config:
         with self._lock:
             # Las reglas y user_voices se reemplazan completas, no se mezclan.
             rules = patch.pop("rules", None) if isinstance(patch, dict) else None
+            tts = patch.get("tts") if isinstance(patch, dict) else None
+            user_voices = tts.pop("user_voices", None) if isinstance(tts, dict) else None
             self.data = _merge(self.data, patch)
             if rules is not None:
                 self.data["rules"] = rules
+            if isinstance(user_voices, dict):
+                self.data["tts"]["user_voices"] = user_voices
         self.save()
 
     def save(self) -> None:

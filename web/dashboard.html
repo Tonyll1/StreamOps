@@ -130,11 +130,25 @@
               <div class="card-h"><h2>Comportamiento</h2></div>
               <label class="sw"><input type="checkbox" id="tts_enabled"><i></i>TTS activado</label>
               <label class="sw"><input type="checkbox" id="tts_read_chat"><i></i>Leer el chat en voz alta</label>
-              <label class="sw"><input type="checkbox" id="tts_say_username"><i></i>Decir el nombre del usuario</label>
-              <label class="sw"><input type="checkbox" id="tts_allow_voice_command"><i></i>El chat elige voz con <code>!voz nombre</code></label>
-              <label>Prefijo de chat <small>(vacío = leer todo)</small><input id="tts_chat_prefix" placeholder="!tts"></label>
+              <label>Máximo de caracteres por mensaje<input type="number" id="tts_max_chars" min="20" max="500"></label>
               <label>Palabras bloqueadas <small>(separadas por coma)</small><input id="tts_blocked_words"></label>
-              <label>Máximo de caracteres<input type="number" id="tts_max_chars" min="20" max="500"></label>
+            </div>
+            <div class="card">
+              <div class="card-h"><h2>Filtros del chat</h2></div>
+              <label>Leer solo si empieza con <small>(vacío = leer todo)</small><input id="tts_chat_prefix" placeholder="!tts"></label>
+              <div class="frow"><label>Mínimo de letras<input type="number" id="tts_chat_min_chars" min="1" max="100"></label>
+                <label>Espera por usuario <small>(s)</small><input type="number" id="tts_user_cooldown" min="0" max="600"></label></div>
+              <label class="sw"><input type="checkbox" id="tts_skip_links"><i></i>Ignorar mensajes con enlaces</label>
+              <label class="sw"><input type="checkbox" id="tts_skip_emoji_only"><i></i>Ignorar mensajes de solo emojis</label>
+              <label class="sw"><input type="checkbox" id="tts_skip_repeats"><i></i>Ignorar mensajes repetidos</label>
+              <label>Usuarios ignorados <small>(bots; separados por coma)</small><input id="tts_ignored_users" placeholder="nightbot, streamelements"></label>
+              <label>Leer solo a estos usuarios <small>(vacío = a todos)</small><input id="tts_only_users"></label>
+              <label>Plataformas que se leen</label>
+              <div class="frow" id="ttsPlatforms">
+                <label class="sw"><input type="checkbox" data-plat="tiktok"><i></i>TikTok</label>
+                <label class="sw"><input type="checkbox" data-plat="twitch"><i></i>Twitch</label>
+                <label class="sw"><input type="checkbox" data-plat="kick"><i></i>Kick</label>
+              </div>
             </div>
             <div class="card">
               <div class="card-h"><h2>Volumen</h2></div>
@@ -142,16 +156,34 @@
               <label class="range">Alertas <output id="o_audio_alert_volume"></output><input type="range" id="audio_alert_volume" min="0" max="2" step="0.05"></label>
             </div>
           </div>
-          <div class="card">
-            <div class="card-h"><h2>Voces <small id="voice_hint"></small></h2>
-              <div class="search"><svg class="ic"><use href="#i-search"/></svg><input id="voiceSearch" placeholder="Buscar voz…"></div></div>
-            <div class="vfilter" id="voiceFilter"><button class="on" data-f="all">Todas</button><button data-f="rvc">Personajes</button><button data-f="piper">Naturales</button></div>
-            <div id="voiceGrid" class="voices"></div>
-            <div class="testbox"><input id="tts_test_text" value="Hola chat, esta es una prueba de voz."><button class="btn primary" id="btnTtsTest"><svg class="ic"><use href="#i-play"/></svg>Probar</button></div>
-            <input type="hidden" id="tts_voice">
+          <div class="col">
+            <div class="card">
+              <div class="card-h"><h2>Voz por defecto <small id="voice_hint"></small></h2>
+                <div class="search"><svg class="ic"><use href="#i-search"/></svg><input id="voiceSearch" placeholder="Buscar voz…"></div></div>
+              <div class="vfilter" id="voiceFilter"><button class="on" data-f="all">Todas</button><button data-f="rvc">Personajes</button><button data-f="piper">Naturales</button></div>
+              <div id="voiceGrid" class="voices"></div>
+              <div class="testbox"><input id="tts_test_text" value="Hola chat, esta es una prueba de voz."><button class="btn primary" id="btnTtsTest"><svg class="ic"><use href="#i-play"/></svg>Probar</button></div>
+              <input type="hidden" id="tts_voice">
+            </div>
+            <div class="card">
+              <div class="card-h"><h2>Qué se lee <small>frase, mínimo y voz por tipo de evento</small></h2></div>
+              <p class="hint">Variables: <code>{user}</code> <code>{text}</code> <code>{gift}</code> <code>{count}</code> <code>{value}</code>. Para leer solo el mensaje, deja el chat en <code>{text}</code>.</p>
+              <div id="readRows" class="readrows"></div>
+            </div>
+            <div class="card">
+              <div class="card-h"><h2>Voces por usuario <small id="uvCount"></small></h2></div>
+              <label class="sw"><input type="checkbox" id="tts_allow_voice_command"><i></i>El chat elige su voz con un comando</label>
+              <div class="frow"><label>Comando<input id="tts_voice_command" placeholder="!voz"></label>
+                <label>Sin voz asignada<select id="tts_random_voices_mode"><option value="off">Usar la voz por defecto</option><option value="all">Voz al azar (cualquiera)</option><option value="rvc">Voz al azar (personajes)</option><option value="piper">Voz al azar (naturales)</option></select></label></div>
+              <p class="hint">El chat escribe <code>!voz miku</code> para elegir y <code>!voz reset</code> para quitarla. La voz al azar es siempre la misma para cada persona.</p>
+              <div class="frow end"><label>Plataforma<select id="uvPlat"><option value="@">Cualquiera (por nombre)</option><option value="tiktok">TikTok</option><option value="twitch">Twitch</option><option value="kick">Kick</option></select></label>
+                <label>Usuario<input id="uvUser" placeholder="nombre de usuario"></label><label>Voz<select id="uvVoice"></select></label>
+                <button class="btn" id="uvAdd"><svg class="ic"><use href="#i-plus"/></svg>Asignar</button></div>
+              <div id="uvList" class="uvlist"></div>
+            </div>
           </div>
         </div>
-      </section>
+</section>
 
       <!-- ALERTAS -->
       <section class="view" id="view-alertas">

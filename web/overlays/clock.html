@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Reloj</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  .box { display:inline-block; padding:8px 18px 10px; text-align:center; }
+  .lab { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--accent); } .lab:empty { display:none; }
+  .time { font-size:40px; font-weight:800; line-height:1.1; letter-spacing:-.01em; } .date { font-size:13px; color:var(--dim); text-transform:capitalize; } .date:empty { display:none; }
+</style>
+</head>
+<body>
+<div class="panel box"><div class="lab" id="lab"></div><div class="time num" id="time"></div><div class="date" id="date"></div></div>
+<script src="/static/overlay.js"></script>
+<script>
+  // Hora local, o tiempo que llevas en directo (cuenta desde que se carga la fuente).
+  const S = StreamOps, mode = S.p("mode", "clock"), started = Date.now(), pad = (n) => String(n).padStart(2, "0");
+  document.getElementById("lab").textContent = S.p("title", mode === "uptime" ? "En directo" : "");
+  function draw() {
+    const now = new Date();
+    if (mode === "uptime") { const s = Math.floor((Date.now() - started) / 1000); document.getElementById("time").textContent = pad(Math.floor(s / 3600)) + ":" + pad(Math.floor(s % 3600 / 60)) + ":" + pad(s % 60); return; }
+    document.getElementById("time").textContent = now.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", second: S.flag("seconds", false) ? "2-digit" : undefined, hour12: S.flag("h12", false) });
+    document.getElementById("date").textContent = S.flag("date", true) ? now.toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" }) : "";
+  }
+  setInterval(draw, 500); draw();
+</script>
+</body>
+</html>

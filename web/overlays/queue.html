@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Fila de espera</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  .box { width:min(340px,100%); }
+  #rows { display:flex; flex-direction:column; gap:5px; }
+  .row { display:flex; align-items:center; gap:10px; padding:7px 12px; font-size:16px; font-weight:600; animation:in-left .3s var(--ease); border-left:3px solid var(--line); }
+  .row:first-child { border-left-color:var(--accent); } .pos { width:20px; font-weight:800; color:var(--dim); } .row:first-child .pos { color:var(--accent); }
+  .nm { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .hint { margin-top:6px; padding:6px 12px; font-size:12px; color:var(--dim); }
+</style>
+</head>
+<body>
+<div class="box"><div class="title" id="title"></div><div id="rows"></div><div class="panel hint" id="hint"></div></div>
+<script src="/static/overlay.js"></script>
+<script>
+  // Fila para jugar con espectadores: entran y salen con comandos del chat.
+  const S = StreamOps, id = "streamops_queue_" + S.p("id", "1"), max = S.num("max", 8), show = S.num("show", 6);
+  const join = S.p("join", "!unirme").toLowerCase(), leave = S.p("leave", "!salir").toLowerCase(), next = S.p("next", "!siguiente").toLowerCase();
+  const owner = S.p("owner").replace(/^@/, "").toLowerCase();
+  let queue = [];
+  try { if (!S.flag("reset")) queue = JSON.parse(localStorage.getItem(id)) || []; } catch (err) { queue = []; }
+  document.getElementById("title").textContent = S.p("title", "Fila para jugar");
+  function draw() {
+    document.getElementById("rows").innerHTML = queue.slice(0, show).map((q, i) => `<div class="panel row"><span class="pos">${i + 1}</span><span class="nm">${S.esc(q.name)}</span></div>`).join("");
+    document.getElementById("hint").textContent = queue.length >= max ? "Fila llena" : `Escribe ${join} para entrar` + (queue.length > show ? ` · +${queue.length - show} más` : "");
+    try { localStorage.setItem(id, JSON.stringify(queue)); } catch (err) { /* sin almacenamiento */ }
+  }
+  draw();
+  S.connect((msg) => {
+    if (msg.type !== "event" || msg.event.type !== "chat") return;
+    const e = msg.event, text = e.text.trim().toLowerCase(), key = e.platform + ":" + e.user_id;
+    if (text.startsWith(join)) { if (queue.length < max && !queue.some((q) => q.key === key)) queue.push({ key, name: e.user }); }
+    else if (text.startsWith(leave)) queue = queue.filter((q) => q.key !== key);
+    else if (text.startsWith(next) && (!owner || e.user.toLowerCase() === owner || e.platform === "sim")) queue.shift();
+    else return;
+    draw();
+  });
+</script>
+</body>
+</html>

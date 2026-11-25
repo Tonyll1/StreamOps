@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Combos de regalos</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  #list { display:flex; flex-direction:column; gap:8px; width:min(440px,100%); }
+  .combo { display:flex; align-items:center; gap:12px; padding:9px 14px; border-left:3px solid var(--gold); animation:in-left .3s var(--ease); }
+  .combo.out { animation:out-fade .4s ease forwards; }
+  .who { flex:1; min-width:0; } .who b { display:block; font-size:17px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .who span { font-size:13px; color:var(--dim); }
+  .x { font-size:34px; font-weight:800; color:var(--gold); line-height:1; display:inline-block; }
+  .x.hit { animation:hit .3s var(--ease); } @keyframes hit { 40% { transform:scale(1.35) rotate(-4deg); } }
+</style>
+</head>
+<body>
+<div id="list"></div>
+<script src="/static/overlay.js"></script>
+<script>
+  // Junta los regalos seguidos de una misma persona en un contador que crece.
+  const S = StreamOps, list = document.getElementById("list"), hold = S.num("seconds", 6) * 1000, max = S.num("max", 4), min = S.num("min", 0), sound = S.p("sound");
+  const combos = new Map();
+  S.connect((msg) => {
+    if (msg.type !== "event" || msg.event.type !== "gift") return;
+    const e = msg.event, key = e.platform + ":" + e.user_id + ":" + e.gift;
+    let c = combos.get(key);
+    if (!c) {
+      const el = document.createElement("div"); el.className = "panel combo";
+      el.innerHTML = `<div class="who"><b>${S.esc(e.user)}</b><span>${S.esc(e.gift)}</span></div><span class="x num"></span>`;
+      c = { el, count: 0, value: 0 }; combos.set(key, c); list.prepend(el);
+      while (list.children.length > max) { const last = list.lastChild; for (const [k, v] of combos) if (v.el === last) { clearTimeout(v.timer); combos.delete(k); } last.remove(); }
+      S.sound(sound);
+    }
+    c.count += e.count || 1; c.value += e.value || 0;
+    c.el.style.display = c.value < min ? "none" : "";
+    const x = c.el.querySelector(".x"); x.textContent = "×" + c.count; x.classList.remove("hit"); void x.offsetWidth; x.classList.add("hit");
+    clearTimeout(c.timer);
+    c.timer = setTimeout(() => { combos.delete(key); c.el.classList.add("out"); setTimeout(() => c.el.remove(), 400); }, hold);
+  });
+</script>
+</body>
+</html>

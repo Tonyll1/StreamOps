@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Ruleta</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  body { display:flex; flex-direction:column; align-items:center; }
+  .wrap { position:relative; width:min(420px,90vw); aspect-ratio:1; opacity:0; transform:scale(.9); transition:opacity .3s, transform .3s var(--ease); }
+  .wrap.on, .wrap.always { opacity:1; transform:none; }
+  canvas { width:100%; height:100%; transition:transform 5s cubic-bezier(.12,.75,.1,1); }
+  .pin { position:absolute; left:50%; top:-6px; margin-left:-12px; border:12px solid transparent; border-top:22px solid #fff; filter:drop-shadow(0 2px 3px rgba(0,0,0,.6)); }
+  #res { margin-top:10px; padding:8px 18px; font-size:20px; font-weight:800; opacity:0; transition:opacity .3s; } #res.on { opacity:1; animation:pop .4s var(--ease); }
+  #res small { display:block; font-size:12px; font-weight:600; color:var(--dim); }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap"><canvas id="c" width="840" height="840"></canvas><div class="pin"></div></div>
+<div class="panel" id="res"></div>
+<script src="/static/overlay.js"></script>
+<script>
+  // Ruleta que gira con un regalo o un comando del chat y anuncia el resultado.
+  const S = StreamOps, options = S.p("options", "Baile|Reto|Canción|Saludo|Chiste|Nada").split("|").map((o) => o.trim()).filter(Boolean);
+  const type = S.p("type", "gift"), min = S.num("min", 0), match = S.p("match", type === "chat" ? "!girar" : "").toLowerCase(), sound = S.p("sound"), winSound = S.p("winsound");
+  const colors = ["#ff6b35", "#5b9dff", "#3ecf8e", "#e668a7", "#ffd54a", "#9b7bff", "#34c9c9", "#ef5350"];
+  const canvas = document.getElementById("c"), ctx = canvas.getContext("2d"), wrap = document.getElementById("wrap"), res = document.getElementById("res");
+  const n = options.length, arc = 2 * Math.PI / n; let angle = 0, busy = false; const queue = [];
+  if (S.flag("always", false)) wrap.classList.add("always");
+  ctx.translate(420, 420);
+  options.forEach((o, i) => {
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 410, i * arc - Math.PI / 2, (i + 1) * arc - Math.PI / 2); ctx.fillStyle = colors[i % colors.length]; ctx.fill();
+    ctx.save(); ctx.rotate(i * arc + arc / 2 - Math.PI / 2); ctx.fillStyle = "#111"; ctx.font = "700 " + Math.max(22, Math.min(44, 520 / n)) + "px Inter, sans-serif"; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    ctx.fillText(o.slice(0, 16), 390, 0); ctx.restore();
+  });
+  ctx.beginPath(); ctx.arc(0, 0, 36, 0, 7); ctx.fillStyle = "#111"; ctx.fill();
+  function spin(user) {
+    if (busy) { if (queue.length < 10) queue.push(user); return; }
+    busy = true; res.classList.remove("on"); wrap.classList.add("on"); S.sound(sound);
+    const pick = Math.floor(Math.random() * n);
+    angle += 360 * 5 + (360 - ((pick + 0.5) * 360 / n) - (angle % 360) + 360) % 360;
+    canvas.style.transform = `rotate(${angle}deg)`;
+    setTimeout(() => {
+      res.innerHTML = `<small>${S.esc(user)} giró la ruleta</small>${S.esc(options[pick])}`; res.classList.add("on"); S.sound(winSound);
+      setTimeout(() => { res.classList.remove("on"); wrap.classList.remove("on"); busy = false; if (queue.length) setTimeout(() => spin(queue.shift()), 500); }, S.num("show", 5) * 1000);
+    }, 5200);
+  }
+  S.connect((msg) => {
+    if (msg.type !== "event" || msg.event.type !== type) return;
+    const e = msg.event, amount = type === "gift" ? e.value : type === "like" ? e.count : 1;
+    if (amount < min) return;
+    if (match && !(type === "chat" ? e.text.trim().toLowerCase().startsWith(match) : (e.gift || "").toLowerCase().includes(match))) return;
+    spin(e.user);
+  });
+</script>
+</body>
+</html>

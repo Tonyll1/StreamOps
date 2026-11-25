@@ -35,6 +35,7 @@ function show(view) {
   [$("viewTitle").textContent, $("viewSub").textContent] = VIEWS[view];
   if (location.hash.slice(1) !== view) history.replaceState(null, "", "#" + view);
   // Las vistas previas son páginas vivas: solo existen mientras se ve la sección.
+  if (view === "voz" && config.tts) api("GET", "/api/config").then((c) => { config = c; renderUserVoices(); });
   if (view === "overlays") renderOverlays(); else if (overlaysDrawn) { $("overlays").innerHTML = ""; overlaysDrawn = false; }
   $("views").scrollTop = 0;
 }
@@ -43,7 +44,8 @@ window.addEventListener("hashchange", () => show(location.hash.slice(1)));
 
 // ---- campos simples: id = seccion_clave ---------------------------------
 const FIELDS = ["tiktok_username","tiktok_autoconnect","twitch_channel","twitch_autoconnect","kick_channel","kick_chatroom_id","kick_autoconnect",
-  "tts_enabled","tts_read_chat","tts_say_username","tts_allow_voice_command","tts_chat_prefix","tts_volume","tts_max_chars","audio_alert_volume",
+  "tts_enabled","tts_read_chat","tts_allow_voice_command","tts_chat_prefix","tts_volume","tts_max_chars","audio_alert_volume",
+  "tts_voice_command","tts_chat_min_chars","tts_user_cooldown","tts_skip_links","tts_skip_emoji_only","tts_skip_repeats",
   "heartrate_source","heartrate_pulsoid_token","heartrate_ble_address","hotkeys_mute_toggle","hotkeys_skip_tts","hotkeys_stop_all","obs_host","obs_port","obs_password"];
 const split = (id) => { const i = id.indexOf("_"); return [id.slice(0, i), id.slice(i + 1)]; };
 function showRange(el) { const out = $("o_" + el.id); if (out) out.textContent = Math.round(el.value * 100) + "%"; }
@@ -53,7 +55,7 @@ function fillFields() {
     if (el.type === "checkbox") el.checked = !!v; else el.value = v ?? "";
     if (el.type === "range") showRange(el);
   }
-  $("tts_blocked_words").value = (config.tts.blocked_words || []).join(", ");
+  fillReader();
 }
 async function saveField(el) {
   const [s, k] = split(el.id);
@@ -66,8 +68,73 @@ FIELDS.forEach((id) => {
   $(id).addEventListener("change", (e) => saveField(e.target));
   if ($(id).type === "range") $(id).addEventListener("input", (e) => showRange(e.target));
 });
-$("tts_blocked_words").addEventListener("change", async (e) => {
-  config = await api("PUT", "/api/config", { tts: { blocked_words: e.target.value.split(",").map((w) => w.trim()).filter(Boolean) } });
+// ---- lectura: qué se lee y voces por usuario ------------------------------
+const LISTS = ["tts_blocked_words", "tts_ignored_users", "tts_only_users"];
+const READ = [["chat", "Mensajes del chat"], ["gift", "Regalos"], ["follow", "Seguidores"], ["share", "Compartidos"], ["like", "Likes"], ["sub", "Suscripciones"], ["raid", "Raids"], ["join", "Entradas al directo"]];
+const voiceSelect = (sel, empty = "Voz por defecto") => `<option value="">${empty}</option>` + voices.map((v) => `<option value="${esc(v.name)}" ${v.name === sel ? "selected" : ""}>${esc(v.name)}</option>`).join("");
+function fillReader() {
+  const t = config.tts;
+  LISTS.forEach((id) => { $(id).value = (t[id.slice(4)] || []).join(", "); });
+  document.querySelectorAll("#ttsPlatforms input").forEach((el) => { el.checked = (t.platforms || {})[el.dataset.plat] !== false; });
+  $("tts_random_voices_mode").value = t.random_voices ? t.random_pool || "all" : "off";
+  $("uvVoice").innerHTML = voiceSelect("", "Elige una voz");
+  $("readRows").innerHTML = READ.map(([type, label]) => {
+    const r = t.read[type] || {}, at = `data-read="${type}"`, chat = type === "chat";
+    return `<div class="readrow ${chat ? (t.read_chat ? "" : "off") : r.enabled ? "" : "off"}">
+      <label class="sw"><input type="checkbox" ${at} data-k="enabled" ${chat ? (t.read_chat ? "checked" : "") : r.enabled ? "checked" : ""}><i></i>${label}</label>
+      <input ${at} data-k="template" value="${esc(r.template || "")}" title="Frase que se lee">
+      ${chat ? `<span class="rr-note">Cada persona usa su voz asignada (abajo) o la voz por defecto.</span>` : `<div class="rr-opts">
+        <label>Voz<select ${at} data-k="voice">${voiceSelect(r.voice)}</select></label>
+        <label>Espera (s)<input type="number" ${at} data-k="cooldown" value="${r.cooldown || 0}" min="0"></label>
+        ${"min" in r ? `<label>${type === "gift" ? "Mín. monedas" : "Mín. likes"}<input type="number" ${at} data-k="min" value="${r.min || 0}" min="0"></label>` : ""}
+        ${type === "gift" ? `<label class="grow">Solo estos regalos<input ${at} data-k="gifts" value="${esc(r.gifts || "")}" placeholder="rosa, león (vacío = todos)"></label>` : ""}</div>`}
+    </div>`;
+  }).join("");
+  renderUserVoices();
+}
+function renderUserVoices() {
+  const entries = Object.entries(config.tts.user_voices || {});
+  $("uvCount").textContent = entries.length ? entries.length + " asignadas" : "";
+  $("uvList").innerHTML = entries.map(([key, voice]) => {
+    const [plat, ...rest] = key.startsWith("@") ? ["", key.slice(1)] : key.split(":");
+    return `<div class="uv"><span class="pchip ${plat}">${plat ? plat.slice(0, 2).toUpperCase() : "@"}</span><b>${esc(rest.join(":"))}</b>
+      <select data-uv="${esc(key)}">${voiceSelect(voice, "—")}</select><button class="btn icon tiny danger" data-uvdel="${esc(key)}" title="Quitar">${icon("x")}</button></div>`;
+  }).join("") || '<div class="empty">Nadie tiene una voz asignada todavía.</div>';
+}
+async function saveUserVoices(map) { config = await api("PUT", "/api/config", { tts: { user_voices: map } }); renderUserVoices(); toast("Guardado"); }
+$("uvAdd").onclick = () => {
+  const user = $("uvUser").value.trim().replace(/^@/, ""), voice = $("uvVoice").value, plat = $("uvPlat").value;
+  if (!user || !voice) return toast("Escribe el usuario y elige una voz", true);
+  $("uvUser").value = "";
+  saveUserVoices({ ...config.tts.user_voices, [plat === "@" ? "@" + user.toLowerCase() : plat + ":" + user]: voice });
+};
+$("uvList").addEventListener("change", (e) => { if (e.target.dataset.uv && e.target.value) saveUserVoices({ ...config.tts.user_voices, [e.target.dataset.uv]: e.target.value }); });
+$("uvList").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-uvdel]");
+  if (!b) return;
+  const map = { ...config.tts.user_voices }; delete map[b.dataset.uvdel]; saveUserVoices(map);
+});
+$("readRows").addEventListener("change", async (e) => {
+  const el = e.target, type = el.dataset.read, key = el.dataset.k;
+  if (!type) return;
+  const value = el.type === "checkbox" ? el.checked : el.type === "number" ? Number(el.value) : el.value;
+  if (key === "enabled") el.closest(".readrow").classList.toggle("off", !value);
+  config = await api("PUT", "/api/config", type === "chat" && key === "enabled" ? { tts: { read_chat: value } } : { tts: { read: { [type]: { [key]: value } } } });
+  if (type === "chat" && key === "enabled") $("tts_read_chat").checked = value;
+  toast("Guardado");
+});
+$("tts_read_chat").addEventListener("change", () => setTimeout(fillReader, 300));
+LISTS.forEach((id) => $(id).addEventListener("change", async (e) => {
+  config = await api("PUT", "/api/config", { tts: { [id.slice(4)]: e.target.value.split(",").map((w) => w.trim()).filter(Boolean) } });
+  toast("Guardado");
+}));
+$("ttsPlatforms").addEventListener("change", async (e) => {
+  config = await api("PUT", "/api/config", { tts: { platforms: { [e.target.dataset.plat]: e.target.checked } } });
+  toast("Guardado");
+});
+$("tts_random_voices_mode").addEventListener("change", async (e) => {
+  const mode = e.target.value;
+  config = await api("PUT", "/api/config", { tts: mode === "off" ? { random_voices: false } : { random_voices: true, random_pool: mode } });
   toast("Guardado");
 });
 
@@ -252,6 +319,35 @@ const OVERLAYS = [
   { id: "subtitle", name: "Subtítulos de la voz", desc: "Muestra lo que el bot está leyendo", path: "subtitle", test: "tts", params: [{ k: "voice", l: "Mostrar nombre de la voz", t: "check", d: true }] },
   { id: "hype", name: "Medidor de hype", desc: "Sube con la actividad y baja con el tiempo", path: "hype", test: "gift",
     params: [P.title("Nivel de hype"), { k: "full", l: "Puntos para llenarlo", t: "number", d: 100 }, { k: "decay", l: "Puntos que pierde por segundo", t: "number", d: 4 }, P.sound("Sonido al llenarse")] },
+  { id: "podium", name: "Podio", desc: "Los tres primeros en un podio con avatares", path: "podium", test: "gift",
+    params: [{ k: "metric", l: "Métrica", t: "select", o: MET, d: "coins" }, { k: "scope", l: "Periodo", t: "select", o: SCOPE, d: "session" }, P.title()] },
+  { id: "combo", name: "Combos de regalos", desc: "Contador que crece con regalos seguidos", path: "combo", test: "gift",
+    params: [{ k: "seconds", l: "Segundos visible", t: "number", d: 6 }, { k: "max", l: "Combos a la vez", t: "number", d: 4 }, { k: "min", l: "Mínimo de monedas", t: "number", d: 0 }, P.sound()] },
+  { id: "welcome", name: "Bienvenidas", desc: "Saluda a quien entra o te sigue", path: "welcome", test: "$type",
+    params: [P.type("join", [["join", "Entra al directo"], ["follow", "Seguidor"], ["share", "Compartido"], ["sub", "Suscripción"]]), { k: "text", l: "Frase ({user})", t: "text", d: "" }, P.gif(), P.sound(),
+      { k: "seconds", l: "Duración (s)", t: "number", d: 4 }, { k: "gap", l: "Espera entre saludos (s)", t: "number", d: 2 }] },
+  { id: "poll", name: "Encuesta", desc: "El chat vota escribiendo un número", path: "poll", test: "poll",
+    params: [{ k: "q", l: "Pregunta", t: "text", d: "" }, { k: "options", l: "Opciones (separadas por |)", t: "text", d: "Sí|No" }, { k: "seconds", l: "Cerrar tras (s, 0 = abierta)", t: "number", d: 0 }, { k: "id", l: "Nº de encuesta (cámbialo para empezar otra)", t: "text", d: "1" }] },
+  { id: "wheel", name: "Ruleta", desc: "Gira con un regalo o con un comando del chat", path: "wheel", test: "$type",
+    params: [{ k: "options", l: "Premios (separados por |)", t: "text", d: "" }, P.type("gift", [["gift", "Regalo"], ["chat", "Comando del chat"], ["follow", "Seguidor"], ["share", "Compartido"]]),
+      { k: "match", l: "Comando o nombre del regalo", t: "text", d: "" }, { k: "min", l: "Mínimo de monedas", t: "number", d: 0 }, P.sound("Sonido al girar"), { k: "winsound", l: "Sonido del resultado", t: "audio", d: "" }, { k: "always", l: "Siempre visible", t: "check", d: false }] },
+  { id: "battle", name: "Batalla de equipos", desc: "Dos bandos compiten con palabras o regalos", path: "battle", test: "battle",
+    params: [P.title(), { k: "a", l: "Equipo A", t: "text", d: "Equipo rojo" }, { k: "b", l: "Equipo B", t: "text", d: "Equipo azul" }, { k: "ka", l: "Palabra de A", t: "text", d: "#rojo" }, { k: "kb", l: "Palabra de B", t: "text", d: "#azul" },
+      { k: "ga", l: "Regalo de A", t: "text", d: "" }, { k: "gb", l: "Regalo de B", t: "text", d: "" }, { k: "reset", l: "Reiniciar al cargar", t: "check", d: false }] },
+  { id: "queue", name: "Fila para jugar", desc: "Los espectadores entran con un comando", path: "queue", test: "queue",
+    params: [P.title("Fila para jugar"), { k: "join", l: "Comando para entrar", t: "text", d: "!unirme" }, { k: "leave", l: "Comando para salir", t: "text", d: "!salir" }, { k: "next", l: "Comando para avanzar", t: "text", d: "!siguiente" },
+      { k: "owner", l: "Quién puede avanzar (tu usuario)", t: "text", d: "" }, { k: "max", l: "Cupo", t: "number", d: 8 }, { k: "reset", l: "Vaciar al cargar", t: "check", d: false }] },
+  { id: "words", name: "Nube de palabras", desc: "Lo que más se repite en el chat", path: "words", test: "words",
+    params: [P.title("El chat dice"), { k: "max", l: "Palabras", t: "number", d: 18 }, { k: "minlen", l: "Letras mínimas", t: "number", d: 4 }, { k: "minutes", l: "Minutos que duran", t: "number", d: 5 }] },
+  { id: "starting", name: "Pantalla de espera", desc: "Empezamos pronto, ya vuelvo o fin del directo", path: "starting",
+    params: [P.title("Empezamos pronto"), { k: "sub", l: "Subtítulo", t: "text", d: "" }, { k: "minutes", l: "Cuenta regresiva (min, 0 = sin)", t: "number", d: 5 }, P.gif(), { k: "bg", l: "Tu fondo", t: "image", d: "" }, P.sound("Sonido al terminar"), { k: "clear", l: "Fondo transparente", t: "check", d: false }] },
+  { id: "image", name: "Tu GIF o logo", desc: "Imagen fija con efecto de movimiento", path: "image",
+    params: [P.gif(), { k: "size", l: "Ancho (px)", t: "number", d: 300 }, { k: "effect", l: "Efecto", t: "select", o: [["", "Ninguno"], ["float", "Flotar"], ["pulse", "Latir"], ["spin", "Girar"], ["shake", "Temblar"]], d: "" }, { k: "text", l: "Texto debajo", t: "text", d: "" }] },
+  { id: "socials", name: "Tus redes", desc: "Tarjeta que rota entre tus cuentas", path: "socials",
+    params: [{ k: "items", l: "Redes (Red:usuario separadas por |)", t: "text", d: "" }, { k: "layout", l: "Formato", t: "select", o: [["", "Rotar"], ["row", "Todas en fila"]], d: "" }, { k: "seconds", l: "Segundos por red", t: "number", d: 6 }] },
+  { id: "clock", name: "Reloj / tiempo en vivo", desc: "Hora local o cuánto llevas en directo", path: "clock",
+    params: [{ k: "mode", l: "Modo", t: "select", o: [["clock", "Hora"], ["uptime", "Tiempo en directo"]], d: "clock" }, P.title(), { k: "seconds", l: "Mostrar segundos", t: "check", d: false }, { k: "h12", l: "Formato 12 h", t: "check", d: false }, { k: "date", l: "Mostrar fecha", t: "check", d: true }] },
+  { id: "hrgraph", name: "Gráfica de pulso", desc: "Tus pulsaciones de los últimos minutos", path: "hrgraph", params: [{ k: "minutes", l: "Minutos de historial", t: "number", d: 3 }] },
   { id: "heartrate", name: "Pulsómetro", desc: "Tus pulsaciones en vivo", path: "heartrate", params: [] },
 ];
 const COMMON = [{ k: "accent", l: "Color de acento", t: "color", d: "#ff6b35" }, { k: "scale", l: "Escala", t: "number", d: 1 }];
@@ -330,6 +426,9 @@ $("overlays").addEventListener("click", async (e) => {
   else if (act === "reset") { delete ovValues[o.id]; ovStore(); redrawOverlays(o.id); }
   else if (act === "test") {
     if (o.test === "tts") return api("POST", "/api/tts/test", { text: "Así se ven los subtítulos de la voz." });
+    const val = (k) => ovGet(o, ovParams(o).find((p) => p.k === k));
+    const chats = { poll: ["1", "2", "1"], battle: [val("ka"), val("kb"), val("ka")], queue: [val("join"), val("join")], words: ["qué buen directo amigos", "directo increíble saludos", "saludos amigos del directo"] }[o.test];
+    if (chats) { for (const [i, text] of chats.entries()) await api("POST", "/api/simulate", { type: "chat", user: "Prueba" + (i + 1), text }); return; }
     const type = o.test === "$type" ? ovGet(o, ovParams(o).find((p) => p.k === "type")) : o.test;
     const match = (ovValues[o.id] || {}).match || "";
     await api("POST", "/api/simulate", { type, user: "Prueba", gift: match || "Rosa", count: type === "like" ? 30 : 1, value: type === "gift" ? 150 : 0, text: (match ? match + " " : "") + "hola desde la prueba" });

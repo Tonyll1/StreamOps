@@ -10,6 +10,7 @@ from collections import deque
 import aiohttp
 from aiohttp import web
 
+from .reader import Reader
 from .audio import Mixer
 from .bus import Event, EventBus
 from .config import Config
@@ -32,6 +33,7 @@ class App:
         self.store = Store()
         self.mixer = Mixer(self.config["audio"].get("device", ""))
         self.tts = TTS(self)
+        self.reader = Reader(self)
         self.rules = RuleEngine(self)
         self.hotkeys = Hotkeys()
         self.connectors = {
@@ -113,32 +115,8 @@ class App:
         if event.type != "join":
             self.recent.append(payload)
         await self.broadcast({"type": "event", "event": payload})
-        if event.type == "chat":
-            self._handle_chat_tts(event)
+        self.reader.handle(event)
         await self.rules.handle(event)
-
-    def _handle_chat_tts(self, event: Event) -> bool:
-        cfg = self.config["tts"]
-        text = event.text.strip()
-        lowered = text.lower()
-        if cfg.get("allow_voice_command") and lowered.startswith("!voz"):
-            wanted = self.tts.find_voice(text[4:])
-            if wanted:
-                cfg["user_voices"][f"{event.platform}:{event.user_id}"] = wanted
-                self.config.save()
-            return True
-        if not cfg["read_chat"] or text.startswith("!") and not cfg["chat_prefix"]:
-            return False
-        prefix = cfg["chat_prefix"].strip().lower()
-        if prefix:
-            if not lowered.startswith(prefix):
-                return False
-            text = text[len(prefix) :].strip()
-        if not text:
-            return False
-        voice = cfg["user_voices"].get(f"{event.platform}:{event.user_id}")
-        spoken = f"{event.user} dice: {text}" if cfg["say_username"] else text
-        return self.tts.say(spoken, voice=voice)
 
     async def simulate(self, data: dict) -> None:
         event = Event(

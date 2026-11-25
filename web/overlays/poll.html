@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Encuesta</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  .box { width:min(440px,100%); padding:12px 14px; }
+  .q { font-size:18px; font-weight:700; margin-bottom:10px; } .foot { margin-top:8px; font-size:12px; color:var(--dim); display:flex; justify-content:space-between; }
+  .opt { position:relative; margin-top:6px; padding:7px 10px; border-radius:7px; background:rgba(255,255,255,.07); overflow:hidden; display:flex; gap:9px; font-size:15px; font-weight:600; }
+  .opt i { position:absolute; inset:0; background:var(--accent); opacity:.35; transform-origin:left; transform:scaleX(0); transition:transform .4s var(--ease); }
+  .opt.win i { opacity:.75; } .opt > * { position:relative; } .opt .n { color:var(--accent); font-weight:800; } .opt.win .n { color:#fff; } .opt .t { flex:1; } .opt .v { font-variant-numeric:tabular-nums; }
+</style>
+</head>
+<body>
+<div class="panel box"><div class="q" id="q"></div><div id="opts"></div><div class="foot"><span>Vota escribiendo el número en el chat</span><span id="total"></span></div></div>
+<script src="/static/overlay.js"></script>
+<script>
+  // Encuesta: cada persona vota escribiendo el número (o el texto) de una opción; puede cambiar su voto.
+  const S = StreamOps, options = S.p("options", "Sí|No").split("|").map((o) => o.trim()).filter(Boolean).slice(0, 8);
+  const id = "streamops_poll_" + S.p("id", "1") + "_" + options.join("|"), seconds = S.num("seconds", 0), started = Date.now();
+  let votes = {};
+  try { votes = S.flag("reset") ? {} : JSON.parse(localStorage.getItem(id) || "{}"); } catch (err) { votes = {}; }
+  document.getElementById("q").textContent = S.p("q", "¿Qué prefieres?");
+  document.getElementById("opts").innerHTML = options.map((o, i) => `<div class="opt" id="o${i}"><i></i><span class="n">${i + 1}</span><span class="t">${S.esc(o)}</span><span class="v"></span></div>`).join("");
+  function draw() {
+    const counts = options.map(() => 0); Object.values(votes).forEach((i) => { if (counts[i] !== undefined) counts[i]++; });
+    const total = counts.reduce((a, b) => a + b, 0), best = Math.max(...counts);
+    counts.forEach((c, i) => { const el = document.getElementById("o" + i);
+      el.querySelector("i").style.transform = `scaleX(${total ? c / total : 0})`; el.querySelector(".v").textContent = total ? Math.round(c / total * 100) + "% · " + c : "0";
+      el.classList.toggle("win", total > 0 && c === best); });
+    const left = seconds ? Math.max(0, Math.ceil(seconds - (Date.now() - started) / 1000)) : null;
+    document.getElementById("total").textContent = total + " votos" + (left === null ? "" : left ? " · " + left + " s" : " · cerrada");
+  }
+  if (seconds) setInterval(draw, 1000);
+  draw();
+  S.connect((msg) => {
+    if (msg.type !== "event" || msg.event.type !== "chat") return;
+    if (seconds && Date.now() - started > seconds * 1000) return;
+    const text = msg.event.text.trim().toLowerCase();
+    let pick = /^\d$/.test(text) ? Number(text) - 1 : options.findIndex((o) => o.toLowerCase() === text);
+    if (pick < 0 || pick >= options.length) return;
+    votes[msg.event.platform + ":" + msg.event.user_id] = pick;
+    try { localStorage.setItem(id, JSON.stringify(votes)); } catch (err) { /* sin almacenamiento */ }
+    draw();
+  });
+</script>
+</body>
+</html>
