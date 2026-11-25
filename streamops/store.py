@@ -12,6 +12,8 @@ METRICS = ("coins", "likes", "shares", "comments")
 _EVENT_METRIC = {"gift": "coins", "like": "likes", "share": "shares", "chat": "comments"}
 
 
+TEST_USER = "__prueba__"  # usuario de las pruebas de overlays
+
 class Store:
     def __init__(self) -> None:
         self._lock = threading.Lock()
@@ -27,10 +29,15 @@ class Store:
         self._db.commit()
         self._session: dict[tuple[str, str], dict] = {}
         self.counters = {"coins": 0.0, "likes": 0.0, "shares": 0.0, "follows": 0.0}
+        self._test: dict[str, float] = {}
+        self._test_follows = 0
+        self.purge_tests()  # restos de pruebas de una ejecución anterior
 
     def record(self, event: Event) -> None:
         if event.type == "follow":
             self.counters["follows"] += 1
+            if event.user_id.startswith(TEST_USER):
+                self._test_follows += 1
         metric = _EVENT_METRIC.get(event.type)
         if not metric or not event.user_id:
             return
@@ -44,6 +51,8 @@ class Store:
             return
         if metric in self.counters:
             self.counters[metric] += amount
+        if event.user_id.startswith(TEST_USER):
+            self._test[metric] = self._test.get(metric, 0.0) + amount
         key = (event.platform, event.user_id)
         with self._lock:
             row = self._session.setdefault(
@@ -85,6 +94,22 @@ class Store:
             "session": {m: self.top(m, "session", limit) for m in METRICS},
             "all": {m: self.top(m, "all", limit) for m in METRICS},
         }
+
+    def purge_tests(self) -> bool:
+        """Quita de tops y contadores lo que dejaron las pruebas de overlays."""
+        with self._lock:
+            found = bool(self._test) or self._test_follows > 0
+            for metric, amount in self._test.items():
+                if metric in self.counters:
+                    self.counters[metric] = max(0.0, self.counters[metric] - amount)
+            self.counters["follows"] = max(0.0, self.counters["follows"] - self._test_follows)
+            self._test.clear()
+            self._test_follows = 0
+            for key in [k for k in self._session if k[1].startswith(TEST_USER)]:
+                del self._session[key]
+            self._db.execute("DELETE FROM totals WHERE user_id LIKE ?", (TEST_USER + "%",))
+            self._db.commit()
+        return found
 
     def reset_session(self) -> None:
         with self._lock:

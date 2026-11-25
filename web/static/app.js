@@ -347,8 +347,8 @@ const OVERLAYS = [
     params: [{ k: "items", l: "Redes (Red:usuario separadas por |)", t: "text", d: "" }, { k: "layout", l: "Formato", t: "select", o: [["", "Rotar"], ["row", "Todas en fila"]], d: "" }, { k: "seconds", l: "Segundos por red", t: "number", d: 6 }] },
   { id: "clock", name: "Reloj / tiempo en vivo", desc: "Hora local o cuánto llevas en directo", path: "clock",
     params: [{ k: "mode", l: "Modo", t: "select", o: [["clock", "Hora"], ["uptime", "Tiempo en directo"]], d: "clock" }, P.title(), { k: "seconds", l: "Mostrar segundos", t: "check", d: false }, { k: "h12", l: "Formato 12 h", t: "check", d: false }, { k: "date", l: "Mostrar fecha", t: "check", d: true }] },
-  { id: "hrgraph", name: "Gráfica de pulso", desc: "Tus pulsaciones de los últimos minutos", path: "hrgraph", params: [{ k: "minutes", l: "Minutos de historial", t: "number", d: 3 }] },
-  { id: "heartrate", name: "Pulsómetro", desc: "Tus pulsaciones en vivo", path: "heartrate", params: [] },
+  { id: "hrgraph", name: "Gráfica de pulso", desc: "Tus pulsaciones de los últimos minutos", path: "hrgraph", test: "hr", params: [{ k: "minutes", l: "Minutos de historial", t: "number", d: 3 }] },
+  { id: "heartrate", name: "Pulsómetro", desc: "Tus pulsaciones en vivo", path: "heartrate", test: "hr", params: [] },
 ];
 const COMMON = [{ k: "accent", l: "Color de acento", t: "color", d: "#ff6b35" }, { k: "scale", l: "Escala", t: "number", d: 1 }];
 const ovDef = (id) => OVERLAYS.find((o) => o.id === id);
@@ -382,7 +382,7 @@ function renderOverlays() {
   if (overlaysDrawn) return;
   overlaysDrawn = true;
   $("overlays").innerHTML = OVERLAYS.map((o) => { const path = ovUrl(o); return `<div class="card ov" id="ov_${o.id}"><div><h2>${o.name}</h2><p class="ovd">${o.desc}</p></div>
-    <div class="frame"><iframe src="${path}" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="frame"><iframe src="${path}" loading="lazy" tabindex="-1" allow="autoplay"></iframe></div>
     <input readonly class="url" value="${location.origin}${path}" onclick="this.select()">
     <div class="actions"><button class="btn tiny" data-act="copy">${icon("copy")}Copiar</button>${o.test ? `<button class="btn tiny ghost" data-act="test">${icon("zap")}Probar</button>` : ""}
       <button class="btn tiny ghost" data-act="edit">${icon("cog")}Personalizar</button><button class="btn tiny ghost icon" data-act="open" title="Abrir">${icon("ext")}</button></div>
@@ -425,15 +425,35 @@ $("overlays").addEventListener("click", async (e) => {
   else if (act === "edit") card.querySelector(".ovform").hidden = !card.querySelector(".ovform").hidden;
   else if (act === "reset") { delete ovValues[o.id]; ovStore(); redrawOverlays(o.id); }
   else if (act === "test") {
-    if (o.test === "tts") return api("POST", "/api/tts/test", { text: "Así se ven los subtítulos de la voz." });
-    const val = (k) => ovGet(o, ovParams(o).find((p) => p.k === k));
-    const chats = { poll: ["1", "2", "1"], battle: [val("ka"), val("kb"), val("ka")], queue: [val("join"), val("join")], words: ["qué buen directo amigos", "directo increíble saludos", "saludos amigos del directo"] }[o.test];
-    if (chats) { for (const [i, text] of chats.entries()) await api("POST", "/api/simulate", { type: "chat", user: "Prueba" + (i + 1), text }); return; }
-    const type = o.test === "$type" ? ovGet(o, ovParams(o).find((p) => p.k === "type")) : o.test;
-    const match = (ovValues[o.id] || {}).match || "";
-    await api("POST", "/api/simulate", { type, user: "Prueba", gift: match || "Rosa", count: type === "like" ? 30 : 1, value: type === "gift" ? 150 : 0, text: (match ? match + " " : "") + "hola desde la prueba" });
+    b.disabled = true;
+    try { await ovTest(card, o); } finally { b.disabled = false; }
   }
 });
+// La vista previa debe estar cargada y conectada antes de enviarle la prueba.
+$("overlays").addEventListener("load", (e) => { if (e.target.tagName === "IFRAME") e.target.dataset.ready = Date.now(); }, true);
+async function ovReady(card) {
+  const frame = card.querySelector("iframe");
+  if (card._t) { clearTimeout(card._t); card._t = null; delete frame.dataset.ready; frame.src = ovUrl(ovDef(card.id.slice(3))); }
+  for (let i = 0; i < 50; i++) {
+    const ready = Number(frame.dataset.ready || 0);
+    if (ready && Date.now() - ready > 600) return;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+}
+async function ovTest(card, o) {
+  await ovReady(card);
+  const direct = { alerts: "alert", subtitle: "tts", heartrate: "hr", hrgraph: "hr" }[o.id];
+  if (direct) return api("POST", "/api/overlay/test", { kind: direct });
+  const val = (k) => { const p = ovParams(o).find((x) => x.k === k); return p ? ovGet(o, p) : ""; };
+  const sim = (body) => api("POST", "/api/simulate", { quiet: true, user: "Prueba", ...body });
+  const type = o.test === "$type" ? val("type") : o.test, match = val("match");
+  const chats = { poll: ["1", "2", "1"], battle: [val("ka"), val("kb"), val("ka")], queue: [val("join")], words: ["qué buen directo amigos", "directo increíble saludos", "saludos amigos del directo"] }[o.test];
+  if (chats) { for (const text of chats) await sim({ type: "chat", user: "Prueba" + Math.floor(Math.random() * 900 + 100), text }); return; }
+  if (o.id === "ticker" && !val("events")) toast("Activa «Incluir últimos eventos» en Personalizar para ver la prueba");
+  const min = Number(val("min")) || 0;
+  await sim({ type, gift: (type === "gift" && match) || "Rosa", count: type === "like" ? Math.max(30, min) : 1, value: type === "gift" ? Math.max(150, min) : 0,
+    text: type === "chat" ? (match || (o.id === "wheel" ? "!girar" : "")) + " hola desde la prueba" : "" });
+}
 
 // ---- reglas -------------------------------------------------------------
 const EVENTS = [["gift", "Regalo / bits"], ["chat", "Chat / comando"], ["like", "Like"], ["follow", "Follow"], ["share", "Compartir"], ["sub", "Suscripción"], ["raid", "Raid"], ["join", "Entrada"]];

@@ -26,6 +26,9 @@ from .tts import TTS
 logger = logging.getLogger(__name__)
 
 
+QUIET_USER = "__prueba__"
+TEST_LINGER = 25  # segundos que los datos de prueba siguen visibles
+
 class App:
     def __init__(self) -> None:
         self.config = Config()
@@ -45,6 +48,7 @@ class App:
         self.sockets: set[web.WebSocketResponse] = set()
         self.recent: deque[dict] = deque(maxlen=100)
         self.loop: asyncio.AbstractEventLoop | None = None
+        self._purge_timer: asyncio.TimerHandle | None = None
         self._tasks: set[asyncio.Task] = set()
         self._dirty = False
         self.bus.subscribe(self.on_event)
@@ -115,14 +119,26 @@ class App:
         if event.type != "join":
             self.recent.append(payload)
         await self.broadcast({"type": "event", "event": payload})
+        if event.user_id.startswith(QUIET_USER):
+            # Prueba de overlay: no dispara voz ni reglas, y sus datos se retiran al rato.
+            if self._purge_timer:
+                self._purge_timer.cancel()
+            self._purge_timer = self.loop.call_later(TEST_LINGER, self._purge_tests)
+            return
         self.reader.handle(event)
         await self.rules.handle(event)
+
+    def _purge_tests(self) -> None:
+        self._purge_timer = None
+        if self.store.purge_tests():
+            self.recent = type(self.recent)((e for e in self.recent if not str(e.get("user_id", "")).startswith(QUIET_USER)), self.recent.maxlen)
+            self._dirty = True
 
     async def simulate(self, data: dict) -> None:
         event = Event(
             platform=data.get("platform") or "sim",
             type=data.get("type", "chat"),
-            user_id=str(data.get("user_id") or data.get("user") or "tester"),
+            user_id=(QUIET_USER + str(data.get("user") or "") if data.get("quiet") else "") or str(data.get("user_id") or data.get("user") or "tester"),
             user=data.get("user") or "Tester",
             text=data.get("text", ""),
             gift=data.get("gift", ""),
@@ -157,9 +173,9 @@ class App:
             self.sockets.discard(ws)
 
     async def _state_loop(self) -> None:
-        """Envía los tops como máximo una vez por segundo y solo si cambiaron."""
+        """Envía tops y contadores poco después de cada cambio (como máximo 5 veces por segundo)."""
         while True:
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.2)
             if self._dirty and self.sockets:
                 self._dirty = False
                 await self.broadcast(self.state())

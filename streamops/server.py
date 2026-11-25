@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import random
+import time
 import copy
 import logging
 import re
@@ -145,6 +147,20 @@ def build_web_app(app: App) -> web.Application:
         )
         for action in rule.get("actions", []):
             await app.rules.run_action(action, event)
+        return web.json_response({"ok": True})
+
+    @routes.post("/api/overlay/test")
+    async def overlay_test(request: web.Request) -> web.Response:
+        """Envía a los overlays un mensaje de muestra (alerta, subtítulo o pulso) sin sonido."""
+        kind = (await request.json()).get("kind")
+        samples = {
+            "alert": {"type": "alert", "text": "Prueba envió 5x Rosa", "media": "", "media_kind": "", "duration": 4, "avatar": "", "muted": True},
+            "tts": {"type": "tts", "text": "Así se ven los subtítulos de la voz.", "voice": app.config["tts"].get("voice", ""), "seconds": 4},
+            "hr": {"type": "hr", "bpm": random.randint(72, 148), "ts": time.time()},
+        }
+        if kind not in samples:
+            raise web.HTTPBadRequest(text="Prueba desconocida")
+        await app.broadcast(samples[kind])
         return web.json_response({"ok": True})
 
     @routes.get("/api/media")
