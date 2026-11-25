@@ -1,0 +1,158 @@
+"""Descarga voces para StreamOps.
+
+    python tools/voces.py lista                 muestra el catálogo
+    python tools/voces.py instalar miku teto    instala las voces indicadas
+    python tools/voces.py instalar todas        instala todo el catálogo
+    python tools/voces.py url nombre https://…/modelo.zip [--base es_MX-ald-medium] [--pitch 0]
+                                                agrega un modelo RVC de cualquier URL
+
+Las voces Piper funcionan solas. Las voces de personaje son modelos RVC hechos por
+fans: necesitan tools\\instalar_rvc.bat y usan una voz Piper como base.
+AVISO: un .pth es un archivo pickle; al cargarlo puede ejecutar código. Instala
+solo modelos de fuentes en las que confíes.
+"""
+
+from __future__ import annotations
+
+import io
+import json
+import sys
+import urllib.request
+import zipfile
+from pathlib import Path
+
+VOICES = Path(__file__).resolve().parent.parent / "data" / "voices"
+RVC = VOICES / "rvc"
+HF = "https://huggingface.co"
+PIPER = HF + "/rhasspy/piper-voices/resolve/main/es/{loc}/{name}/{q}/{loc}-{name}-{q}.onnx"
+BASE_F = "es_MX-claude-high"  # base femenina
+BASE_M = "es_MX-ald-medium"  # base masculina
+
+# nombre -> ("piper", url_onnx)  |  ("rvc", [urls], base, tono en semitonos)
+CATALOG: dict[str, tuple] = {
+    "es_MX-claude-high": ("piper", PIPER.format(loc="es_MX", name="claude", q="high")),
+    "es_MX-ald-medium": ("piper", PIPER.format(loc="es_MX", name="ald", q="medium")),
+    "es_AR-daniela-high": ("piper", PIPER.format(loc="es_AR", name="daniela", q="high")),
+    "es_ES-davefx-medium": ("piper", PIPER.format(loc="es_ES", name="davefx", q="medium")),
+    "es_MX-laura-high": ("piper", HF + "/HirCoir/Piper-TTS-Laura/resolve/main/es_MX-laura-high.onnx"),
+    "es_ES-glados-medium": ("piper", HF + "/csukuangfj/vits-piper-es_ES-glados-medium/resolve/main/es_ES-glados-medium.onnx"),
+    "miku": ("rvc", [HF + "/Alejo520/ModelsByAlejo520/resolve/main/hatsune-miku-Latin-Spanish.zip"], BASE_F, 4),
+    "miku-jp": ("rvc", [HF + "/binant/Hatsune_Miku__RVC_v2_/resolve/main/model.pth",
+                        HF + "/binant/Hatsune_Miku__RVC_v2_/resolve/main/model.index"], BASE_F, 6),
+    "teto": ("rvc", [HF + "/SinsuSquid/Kasane-Teto-UTAU-RVC-v2/resolve/main/KasaneTeto.pth",
+                     HF + "/SinsuSquid/Kasane-Teto-UTAU-RVC-v2/resolve/main/KasaneTeto.index"], BASE_F, 2),
+    "bob-esponja": ("rvc", [HF + "/EthanRhys/Bob-Esponja-LA/resolve/main/Bob-Esponja-LA.zip"], BASE_M, 6),
+    "homero": ("rvc", [HF + "/EthanRhys/Homero-Simpson-LA/resolve/main/Homero-Simpson-LA.zip"], BASE_M, 0),
+    "calamardo": ("rvc", [HF + "/EthanRhys/Calamardo-Tentaculos-LA/resolve/main/Calamardo-Tentaculos-LA.zip"], BASE_M, 0),
+    "patricio": ("rvc", [HF + "/AmanBOT/Patricio/resolve/main/Patricio.zip"], BASE_M, -2),
+    "shrek": ("rvc", [HF + "/bowlql/ShrekLatRVC/resolve/main/shrek-lat.zip"], BASE_M, -2),
+    "burro": ("rvc", [HF + "/BrianSalasHache/burro_shrek/resolve/main/burro_shrek.pth"], BASE_M, 2),
+    "goku": ("rvc", [HF + "/Robertitohd247/Gokulatino/resolve/main/gokumodel2.0.zip"], BASE_M, 0),
+    "loquendo-jorge": ("rvc", [HF + "/legoguy2424/Jorge-Loquendo/resolve/main/Jorge.zip"], BASE_M, 0),
+    "loquendo-juan": ("rvc", [HF + "/TheRealheavy/JuanLoquendoRVC/resolve/main/JuanLoquendo.zip"], BASE_M, 0),
+    "dross": ("rvc", [HF + "/Slichi/dross/resolve/main/dross.zip"], BASE_M, -2),
+    "chavo": ("rvc", [HF + "/Chuckythedoll2005/Voice_Models/resolve/main/ElChavoDelOcho.zip"], BASE_M, 3),
+    "don-ramon": ("rvc", [HF + "/IzmaelAguayo/IzmaelAguayoRVC/resolve/main/DonRamon.zip"], BASE_M, 0),
+    "duende-verde": ("rvc", [HF + "/coversia21/RVC_DuendeVerde_Latino/resolve/main/jesse_conde.zip"], BASE_M, 0),
+}
+
+
+def fetch(url: str) -> bytes:
+    req = urllib.request.Request(url, headers={"User-Agent": "streamops-voices/1.0"})
+    with urllib.request.urlopen(req, timeout=120) as resp:
+        total = int(resp.headers.get("Content-Length") or 0)
+        buf = io.BytesIO()
+        while chunk := resp.read(1 << 20):
+            buf.write(chunk)
+            if total:
+                print(f"\r    {buf.tell() / 1048576:6.1f} / {total / 1048576:.1f} MB", end="", flush=True)
+        print()
+        return buf.getvalue()
+
+
+def install_piper(name: str, url: str) -> None:
+    target = VOICES / f"{name}.onnx"
+    if target.is_file() and target.with_suffix(".onnx.json").is_file():
+        print(f"  {name}: ya instalada")
+        return
+    print(f"  {name}: descargando voz Piper")
+    target.with_suffix(".onnx.json").write_bytes(fetch(url + ".json"))
+    target.write_bytes(fetch(url))
+
+
+def install_rvc(name: str, urls: list[str], base: str, pitch: int) -> None:
+    RVC.mkdir(parents=True, exist_ok=True)
+    spec_file = VOICES / f"{name}.voice.json"
+    if spec_file.is_file() and (RVC / f"{name}.pth").is_file():
+        print(f"  {name}: ya instalada")
+        return
+    if base in CATALOG:
+        install_piper(base, CATALOG[base][1])
+    has_index = False
+    for url in urls:
+        print(f"  {name}: descargando {url.rsplit('/', 1)[-1]}")
+        data = fetch(url)
+        lower = url.lower().split("?")[0]
+        if lower.endswith(".zip"):
+            # Solo se extraen .pth/.index, con nombre propio (sin rutas del zip).
+            with zipfile.ZipFile(io.BytesIO(data)) as archive:
+                members = [m for m in archive.infolist() if not m.is_dir()]
+                pths = [m for m in members if m.filename.lower().endswith(".pth") and not Path(m.filename).name.startswith(("D_", "G_"))]
+                idxs = [m for m in members if m.filename.lower().endswith(".index")]
+                if not pths:
+                    raise RuntimeError("el zip no contiene un modelo .pth")
+                (RVC / f"{name}.pth").write_bytes(archive.read(min(pths, key=lambda m: m.file_size)))
+                if idxs:
+                    (RVC / f"{name}.index").write_bytes(archive.read(max(idxs, key=lambda m: m.file_size)))
+                    has_index = True
+        elif lower.endswith(".pth"):
+            (RVC / f"{name}.pth").write_bytes(data)
+        elif lower.endswith(".index"):
+            (RVC / f"{name}.index").write_bytes(data)
+            has_index = True
+        else:
+            raise RuntimeError(f"extensión no reconocida: {url}")
+    spec = {"piper": base, "rvc": {"model": f"{name}.pth", "pitch": pitch}}
+    if has_index:
+        spec["rvc"]["index"] = f"{name}.index"
+    spec_file.write_text(json.dumps(spec, indent=2), encoding="utf-8")
+    print(f"  {name}: lista (base {base}, tono {pitch:+d})")
+
+
+def main(argv: list[str]) -> int:
+    VOICES.mkdir(parents=True, exist_ok=True)
+    if len(argv) < 2 or argv[1] == "lista":
+        print(__doc__)
+        for name, entry in CATALOG.items():
+            installed = (VOICES / f"{name}.onnx").is_file() or (VOICES / f"{name}.voice.json").is_file()
+            print(f"  [{'x' if installed else ' '}] {name:<22} {'Piper' if entry[0] == 'piper' else 'personaje (RVC)'}")
+        return 0
+    if argv[1] == "instalar":
+        names = list(CATALOG) if "todas" in argv[2:] else argv[2:]
+        failed = []
+        for name in names:
+            entry = CATALOG.get(name)
+            if entry is None:
+                print(f"  {name}: no está en el catálogo")
+                failed.append(name)
+                continue
+            try:
+                install_piper(name, entry[1]) if entry[0] == "piper" else install_rvc(name, *entry[1:])
+            except Exception as exc:
+                print(f"  {name}: ERROR {exc}")
+                failed.append(name)
+        if failed:
+            print("\nFallaron: " + ", ".join(failed))
+        return 1 if failed else 0
+    if argv[1] == "url" and len(argv) >= 4:
+        opts = argv[4:]
+        base = opts[opts.index("--base") + 1] if "--base" in opts else BASE_M
+        pitch = int(opts[opts.index("--pitch") + 1]) if "--pitch" in opts else 0
+        install_rvc(argv[2], [argv[3]], base, pitch)
+        return 0
+    print(__doc__)
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

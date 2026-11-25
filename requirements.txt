@@ -1,0 +1,9 @@
+aiohttp>=3.9
+TikTokLive>=6.4
+sounddevice>=0.5
+soundfile>=0.12
+numpy>=1.26,<3
+pynput>=1.7
+piper-tts>=1.2
+bleak>=0.22
+obsws-python>=1.7

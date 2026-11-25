@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>StreamOps · Pulsómetro</title>
+<style>
+  html, body { margin: 0; background: transparent; overflow: hidden; }
+  body { font-family: "Segoe UI", system-ui, sans-serif; color: #fff; padding: 12px; }
+  .card { display: inline-flex; align-items: center; gap: 14px; padding: 12px 18px; border-radius: 16px;
+          background: rgba(15,15,30,.82); min-width: 300px; }
+  .heart { font-size: 46px; color: var(--c, #ff3b5c); animation: beat var(--beat, 1s) infinite; line-height: 1; }
+  @keyframes beat { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.28); } 30% { transform: scale(1); } 45% { transform: scale(1.14); } }
+  .bpm { font-size: 46px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; min-width: 2.2ch; }
+  .unit { font-size: 14px; opacity: .7; letter-spacing: .1em; }
+  .zone { font-size: 13px; font-weight: 700; color: var(--c, #ff3b5c); text-transform: uppercase; }
+  canvas { width: 150px; height: 54px; }
+  .stale { opacity: .35; } .stale .heart { animation: none; }
+</style>
+</head>
+<body>
+<div class="card stale" id="card">
+  <div class="heart">♥</div>
+  <div><div class="bpm" id="bpm">--</div><div class="unit">BPM</div></div>
+  <div><canvas id="graph" width="300" height="108"></canvas><div class="zone" id="zone"></div></div>
+</div>
+<script src="/static/overlay.js"></script>
+<script>
+  const card = document.getElementById("card"), bpmEl = document.getElementById("bpm"), zoneEl = document.getElementById("zone");
+  const canvas = document.getElementById("graph"), ctx = canvas.getContext("2d");
+  const history = []; let lastSeen = 0;
+  const zones = [[0, "Reposo", "#4fc3f7"], [90, "Activo", "#66bb6a"], [120, "Intenso", "#ffa726"], [150, "Al límite", "#ff3b5c"]];
+  if (StreamOps.params.get("graph") === "0") canvas.style.display = "none";
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (history.length < 2) return;
+    const min = Math.min(...history) - 5, max = Math.max(...history) + 5;
+    ctx.beginPath();
+    history.forEach((v, i) => {
+      const x = (i / (history.length - 1)) * canvas.width;
+      const y = canvas.height - ((v - min) / (max - min)) * canvas.height;
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    });
+    ctx.lineWidth = 4; ctx.lineJoin = "round";
+    ctx.strokeStyle = getComputedStyle(card).getPropertyValue("--c") || "#ff3b5c"; ctx.stroke();
+  }
+  function setBpm(bpm) {
+    if (!bpm) return;
+    lastSeen = Date.now(); card.classList.remove("stale");
+    bpmEl.textContent = bpm;
+    history.push(bpm); if (history.length > 60) history.shift();
+    let zone = zones[0]; for (const z of zones) if (bpm >= z[0]) zone = z;
+    zoneEl.textContent = zone[1];
+    card.style.setProperty("--c", zone[2]);
+    card.style.setProperty("--beat", (60 / Math.max(bpm, 30)).toFixed(2) + "s");
+    draw();
+  }
+  StreamOps.connect((msg) => { if (msg.type === "hr") setBpm(msg.bpm); });
+  setInterval(() => { if (Date.now() - lastSeen > 10000) card.classList.add("stale"); }, 2000);
+</script>
+</body>
+</html>
