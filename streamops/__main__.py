@@ -26,15 +26,17 @@ def main() -> None:
     host, port = probe["server"]["host"], int(probe["server"]["port"])
     url = f"http://{host}:{port}/"
     browser = "--no-browser" not in sys.argv
-    if FROZEN and _running(host, port):
+    if _running(host, port):
         # Ya hay un StreamOps abierto: basta con mostrar su panel.
         if browser:
             webbrowser.open(url)
         return
-    if FROZEN:
-        # El .exe no tiene consola: todo lo que se imprima va al registro.
+    windowless = FROZEN or sys.stdout is None  # StreamOps.exe o pythonw (acceso directo)
+    if windowless:
+        # Sin consola: todo lo que se imprima va al registro.
         log = open(DATA / "streamops.log", "w", buffering=1, encoding="utf-8", errors="replace")
         sys.stdout = sys.stderr = log
+    if FROZEN:
         os.chdir(DATA)
     logging.basicConfig(
         level=logging.INFO,
@@ -54,7 +56,7 @@ def main() -> None:
     try:
         web.run_app(build_web_app(app), host=host, port=port, print=None)
     finally:
-        if FROZEN:
+        if windowless:
             # Las bibliotecas de voz dejan hilos vivos que impedirían que el programa termine.
             logging.shutdown()
             sys.stdout.flush()

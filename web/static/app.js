@@ -268,7 +268,7 @@ function catVisible() {
 }
 function renderCatalog() {
   const en = catalog.engine, job = en.job, hasRvc = catalog.voices.some((v) => v.kind === "rvc" && v.installed);
-  $("btnQuit").hidden = !catalog.app.frozen;
+  $("btnQuit").hidden = false;
   $("engineBox").hidden = en.installed || !catalog.app.frozen;
   $("engineBox").innerHTML = `<p><b>Las voces de personaje necesitan el motor de voces</b><small id="cat_${ENGINE_JOB}">${esc(job ? job.text : `Descarga única, ${en.size}. ${en.note || ""}${hasRvc ? " Mientras tanto suenan con su voz base." : ""}`)}</small></p>
     <button class="btn primary" id="engineGet" ${job && job.status !== "error" ? "disabled" : ""}>${job && job.status === "error" ? "Reintentar" : job ? "Instalando…" : "Instalar motor"}</button>`;
