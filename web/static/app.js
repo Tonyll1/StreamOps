@@ -326,8 +326,44 @@ const OVERLAYS = [
   { id: "goal", name: "Meta", desc: "Barra de progreso hacia un objetivo", path: "goal", test: "gift",
     params: [{ k: "metric", l: "Métrica", t: "select", o: [["coins", "Monedas"], ["likes", "Likes"], ["follows", "Seguidores"], ["shares", "Compartidos"]], d: "coins" }, { k: "goal", l: "Objetivo", t: "number", d: 1000 },
       { k: "start", l: "Empezar en", t: "number", d: 0 }, P.title(), { k: "style", l: "Forma", t: "select", o: [["", "Barra"], ["ring", "Anillo"]], d: "" }, P.gif("GIF al cumplirla"), P.sound("Sonido al cumplirla")] },
-  { id: "chat", name: "Chat", desc: "Mensajes de TikTok, Twitch y Kick juntos", path: "chat", test: "chat",
-    params: [{ k: "style", l: "Estilo", t: "select", o: [["bubble", "Burbujas"], ["plain", "Solo texto"]], d: "bubble" }, { k: "max", l: "Mensajes visibles", t: "number", d: 8 }, { k: "fade", l: "Ocultar tras (s, 0 = nunca)", t: "number", d: 0 }, { k: "avatars", l: "Mostrar avatares", t: "check", d: true }] },
+  { id: "chat", name: "Chat · burbujas", desc: "Mensajes de TikTok, Twitch y Kick juntos", path: "chat", test: "chat",
+    params: [{ k: "style", l: "Estilo", t: "select", o: [["bubble", "Burbujas"], ["plain", "Solo texto"], ["outline", "Texto con contorno"], ["card", "Tarjetas"], ["compact", "Compacto"], ["tag", "Etiqueta de nombre"], ["bar", "Franja de color"],
+        ["split", "Mensajería"], ["neon", "Neón"], ["terminal", "Terminal"], ["comic", "Cómic"], ["pixel", "Pixel retro"]], d: "bubble" },
+      { k: "names", l: "Color de nombres", t: "select", o: [["platform", "Por plataforma"], ["user", "Uno por usuario"], ["accent", "Color de acento"]], d: "platform" },
+      { k: "anim", l: "Entrada", t: "select", o: [["slide", "Deslizar"], ["fade", "Aparecer"], ["pop", "Rebote"], ["up", "Subir"]], d: "slide" },
+      { k: "from", l: "Crece desde", t: "select", o: [["", "Abajo"], ["top", "Arriba"]], d: "" }, { k: "align", l: "Lado", t: "select", o: [["", "Izquierda"], ["right", "Derecha"]], d: "" },
+      { k: "size", l: "Tamaño de letra", t: "number", d: 16 }, { k: "width", l: "Ancho (px)", t: "number", d: 460 }, { k: "max", l: "Mensajes visibles", t: "number", d: 8 },
+      { k: "fade", l: "Ocultar tras (s, 0 = nunca)", t: "number", d: 0 }, { k: "minlen", l: "Letras mínimas", t: "number", d: 0 },
+      { k: "avatars", l: "Avatares", t: "check", d: true }, { k: "badges", l: "Insignia de plataforma", t: "check", d: false },
+      { k: "events", l: "Incluir regalos y follows", t: "check", d: false }, { k: "hidecmd", l: "Ocultar comandos (!)", t: "check", d: true }] },
+  { id: "chat_plain", name: "Chat · solo texto", desc: "Sin fondo, con sombra para leerse sobre el juego", path: "chat", test: "chat", sameAs: "chat", preset: { style: "plain", avatars: false, names: "user" } },
+  { id: "chat_outline", name: "Chat · contorno grueso", desc: "Letras con borde negro, muy legible", path: "chat", test: "chat", sameAs: "chat", preset: { style: "outline", avatars: false, names: "user", size: 20 } },
+  { id: "chat_card", name: "Chat · tarjetas", desc: "Nombre arriba y franja de color por usuario", path: "chat", test: "chat", sameAs: "chat", preset: { style: "card", names: "user" } },
+  { id: "chat_tag", name: "Chat · etiqueta", desc: "El nombre en una etiqueta de color", path: "chat", test: "chat", sameAs: "chat", preset: { style: "tag", names: "user", avatars: false } },
+  { id: "chat_compact", name: "Chat · compacto", desc: "Una línea por mensaje, ocupa poco", path: "chat", test: "chat", sameAs: "chat", preset: { style: "compact", max: 14, size: 14 } },
+  { id: "chat_split", name: "Chat · mensajería", desc: "Globos alternados como en un chat de móvil", path: "chat", test: "chat", sameAs: "chat", preset: { style: "split", avatars: false, anim: "pop" } },
+  { id: "chat_neon", name: "Chat · neón", desc: "Borde luminoso del color de cada usuario", path: "chat", test: "chat", sameAs: "chat", preset: { style: "neon", names: "user" } },
+  { id: "chat_terminal", name: "Chat · terminal", desc: "Estilo consola verde", path: "chat", test: "chat", sameAs: "chat", preset: { style: "terminal", anim: "fade" } },
+  { id: "chat_comic", name: "Chat · cómic", desc: "Globos blancos con trazo grueso", path: "chat", test: "chat", sameAs: "chat", preset: { style: "comic", anim: "pop" } },
+  { id: "chat_pixel", name: "Chat · pixel retro", desc: "Cajas de diálogo de videojuego clásico", path: "chat", test: "chat", sameAs: "chat", preset: { style: "pixel", max: 5 } },
+  { id: "chat_events", name: "Chat + eventos", desc: "Mensajes, regalos y follows en la misma lista", path: "chat", test: "gift", sameAs: "chat", preset: { style: "bar", events: true, badges: true, names: "user" } },
+  { id: "chatline", name: "Chat en una línea", desc: "Franja horizontal; lo nuevo entra por la derecha", path: "chatline", test: "chat",
+    params: [{ k: "label", l: "Etiqueta", t: "text", d: "Chat" }, { k: "size", l: "Tamaño de letra", t: "number", d: 17 }, { k: "max", l: "Mensajes", t: "number", d: 12 }] },
+  { id: "danmaku", name: "Chat volador", desc: "Los mensajes cruzan la pantalla de lado a lado", path: "danmaku", test: "chat",
+    params: [{ k: "size", l: "Tamaño de letra", t: "number", d: 26 }, { k: "speed", l: "Velocidad", t: "number", d: 1 }, { k: "area", l: "Zona usada (% de alto)", t: "number", d: 100 }, { k: "name", l: "Mostrar nombre", t: "check", d: true }] },
+  { id: "chatpop", name: "Burbujas flotantes", desc: "Cada mensaje es un globo que aparece y se va", path: "chatpop", test: "chat",
+    params: [{ k: "style", l: "Color", t: "select", o: [["", "Blanco"], ["dark", "Oscuro"]], d: "" }, { k: "seconds", l: "Duración (s)", t: "number", d: 6 }, { k: "size", l: "Tamaño de letra", t: "number", d: 16 }, { k: "max", l: "A la vez", t: "number", d: 10 }] },
+  { id: "spotlight", name: "Mensaje destacado", desc: "Un mensaje a la vez, en grande y letra por letra", path: "spotlight", test: "chat", say: "!destacar ¡Este mensaje sale en grande!",
+    params: [{ k: "mode", l: "Qué mensajes", t: "select", o: [["all", "Todos"], ["cmd", "Solo con comando"], ["donors", "Solo de quien regaló"]], d: "all" }, { k: "cmd", l: "Comando", t: "text", d: "!destacar" },
+      { k: "seconds", l: "Segundos en pantalla", t: "number", d: 7 }, { k: "size", l: "Tamaño de letra", t: "number", d: 26 }, { k: "type", l: "Escribir letra por letra", t: "check", d: true }, P.sound()] },
+  { id: "questions", name: "Preguntas del chat", desc: "Lista de preguntas para responder en orden", path: "questions", test: "chat", say: "¿A qué hora empiezas mañana?",
+    params: [P.title("Preguntas del chat"), { k: "cmd", l: "Comando (vacío = mensajes con ?)", t: "text", d: "" }, { k: "done", l: "Comando para marcar respondida", t: "text", d: "!respondida" },
+      { k: "owner", l: "Quién puede marcar (tu usuario)", t: "text", d: "" }, { k: "max", l: "Preguntas visibles", t: "number", d: 5 }, { k: "reset", l: "Vaciar al cargar", t: "check", d: false }] },
+  { id: "pinned", name: "Mensaje fijado", desc: "Un aviso fijo que cambias desde el chat", path: "pinned", test: "chat", say: "!fijar Hoy: torneo a las 9 pm",
+    params: [P.title("Fijado"), { k: "text", l: "Texto inicial", t: "text", d: "" }, { k: "cmd", l: "Comando para fijar", t: "text", d: "!fijar" }, { k: "clear", l: "Comando para quitar", t: "text", d: "!quitar" },
+      { k: "owner", l: "Quién puede fijar (tu usuario)", t: "text", d: "" }, { k: "size", l: "Tamaño de letra", t: "number", d: 19 }, P.sound()] },
+  { id: "emotes", name: "Muro de emojis", desc: "Los emojis del chat vuelan por la pantalla", path: "emotes", test: "chat", say: "😂🔥❤️👏🎉",
+    params: [{ k: "mode", l: "Movimiento", t: "select", o: [["rise", "Suben"], ["fall", "Caen"], ["burst", "Aparecen"]], d: "rise" }, { k: "size", l: "Tamaño (px)", t: "number", d: 40 }, { k: "each", l: "Máximo por mensaje", t: "number", d: 6 }] },
   { id: "feed", name: "Actividad reciente", desc: "Lista de regalos, follows y compartidos", path: "feed", test: "follow",
     params: [P.title("Actividad"), { k: "types", l: "Eventos (separados por coma)", t: "text", d: "gift,follow,share,sub,raid" }, { k: "max", l: "Filas", t: "number", d: 6 }] },
   { id: "lastevent", name: "Último seguidor / regalo", desc: "Tarjeta con el evento más reciente", path: "lastevent", test: "$type",
@@ -408,16 +444,28 @@ function ovField(o, p) {
   if (p.t === "color") return `<label>${p.l}<input type="color" ${at} value="${esc(v)}"></label>`;
   return `<label>${p.l}<input type="${p.t === "number" ? "number" : "text"}" step="any" ${at} value="${esc(v)}"></label>`;
 }
+const OV_GROUPS = [["all", "Todos"], ["chat", "Chat"], ["top", "Tops y metas"], ["alert", "Alertas y efectos"], ["game", "Juegos con el chat"], ["info", "Información"]];
+const OV_GROUP_OF = { chat: /^(chat|danmaku|spotlight|questions|pinned|emotes|words|subtitle)/, top: /^(top|rotator|podium|goal|stats|hype|lastevent|feed|combo)/, alert: /^(alerts|sticker|fountain|confetti|welcome|image)/,
+  game: /^(poll|wheel|battle|queue|timer)/ };
+const ovGroup = (o) => (Object.entries(OV_GROUP_OF).find(([, re]) => re.test(o.id)) || ["info"])[0];
+let ovFilter = "all";
+function ovVisible() {
+  const q = $("ovSearch").value.trim().toLowerCase();
+  return OVERLAYS.filter((o) => (ovFilter === "all" || ovGroup(o) === ovFilter) && (!q || (o.name + " " + o.desc).toLowerCase().includes(q)));
+}
 function renderOverlays() {
   if (overlaysDrawn) return;
   overlaysDrawn = true;
-  $("overlays").innerHTML = OVERLAYS.map((o) => { const path = ovUrl(o); return `<div class="card ov" id="ov_${o.id}"><div><h2>${o.name}</h2><p class="ovd">${o.desc}</p></div>
+  $("ovFilter").innerHTML = OV_GROUPS.map(([id, label]) => `<button class="${id === ovFilter ? "on" : ""}" data-g="${id}">${label} <small>${id === "all" ? OVERLAYS.length : OVERLAYS.filter((o) => ovGroup(o) === id).length}</small></button>`).join("");
+  $("overlays").innerHTML = ovVisible().map((o) => { const path = ovUrl(o); return `<div class="card ov" id="ov_${o.id}"><div><h2>${o.name}</h2><p class="ovd">${o.desc}</p></div>
     <div class="frame"><iframe src="${path}" loading="lazy" tabindex="-1" allow="autoplay"></iframe></div>
     <input readonly class="url" value="${location.origin}${path}" onclick="this.select()">
     <div class="actions"><button class="btn tiny" data-act="copy">${icon("copy")}Copiar</button>${o.test ? `<button class="btn tiny ghost" data-act="test">${icon("zap")}Probar</button>` : ""}
       <button class="btn tiny ghost" data-act="edit">${icon("cog")}Personalizar</button><button class="btn tiny ghost icon" data-act="open" title="Abrir">${icon("ext")}</button></div>
-    <div class="ovform" hidden>${ovParams(o).map((p) => ovField(o, p)).join("")}<button class="btn tiny ghost danger" data-act="reset">Restablecer</button></div></div>`; }).join("");
+    <div class="ovform" hidden>${ovParams(o).map((p) => ovField(o, p)).join("")}<button class="btn tiny ghost danger" data-act="reset">Restablecer</button></div></div>`; }).join("") || '<div class="empty">Ningún overlay coincide.</div>';
 }
+$("ovSearch").addEventListener("input", () => { overlaysDrawn = false; renderOverlays(); });
+$("ovFilter").addEventListener("click", (e) => { const b = e.target.closest("[data-g]"); if (!b) return; ovFilter = b.dataset.g; overlaysDrawn = false; renderOverlays(); });
 function ovRefresh(o) {
   const card = $("ov_" + o.id), path = ovUrl(o);
   card.querySelector(".url").value = location.origin + path;
@@ -429,7 +477,7 @@ function redrawOverlays(keepOpen) {
   const open = [...document.querySelectorAll(".ovform:not([hidden])")].map((f) => f.parentElement.id.slice(3));
   if (keepOpen && !open.includes(keepOpen)) open.push(keepOpen);
   overlaysDrawn = false; renderOverlays();
-  open.forEach((id) => { $("ov_" + id).querySelector(".ovform").hidden = false; });
+  open.forEach((id) => { const card = $("ov_" + id); if (card) card.querySelector(".ovform").hidden = false; });
 }
 let ovPickTarget = null;
 $("overlays").addEventListener("input", (e) => {
@@ -482,7 +530,7 @@ async function ovTest(card, o) {
   if (o.id === "ticker" && !val("events")) toast("Activa «Incluir últimos eventos» en Personalizar para ver la prueba");
   const min = Number(val("min")) || 0;
   await sim({ type, gift: (type === "gift" && match) || "Rosa", count: type === "like" ? Math.max(30, min) : 1, value: type === "gift" ? Math.max(150, min) : 0,
-    text: type === "chat" ? (match || (o.id === "wheel" ? "!girar" : "")) + " hola desde la prueba" : "" });
+    text: type === "chat" ? o.say || (match || (o.id === "wheel" ? "!girar" : "")) + " hola desde la prueba" : "" });
 }
 
 // ---- reglas -------------------------------------------------------------

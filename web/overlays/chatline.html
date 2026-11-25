@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Chat en una línea</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  body { padding:0; }
+  .bar { display:flex; align-items:center; height:calc(var(--fs,17px) * 2.5); background:var(--panel); border-top:1px solid var(--line); border-bottom:1px solid var(--line); overflow:hidden; }
+  .tag { flex:none; height:100%; display:grid; place-items:center; padding:0 14px; background:var(--accent); color:var(--ink); font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:.08em; z-index:1; } .tag:empty { display:none; }
+  #row { display:flex; gap:26px; padding:0 16px; white-space:nowrap; font-size:var(--fs,17px); transition:transform .5s var(--ease); will-change:transform; }
+  .m { animation:in-fade .4s; } .m b { color:var(--u,var(--accent)); margin-right:6px; } @keyframes in-fade { from { opacity:0; } }
+</style>
+</head>
+<body>
+<div class="bar"><div class="tag" id="tag"></div><div id="row"></div></div>
+<script src="/static/overlay.js"></script>
+<script>
+  // El chat en una sola franja horizontal: los mensajes nuevos entran por la derecha y empujan a los anteriores.
+  const S = StreamOps, row = document.getElementById("row"), max = S.num("max", 12);
+  const colors = { tiktok: "#ff8fa3", twitch: "#b39dff", kick: "#7dfc57", sim: "var(--accent)" };
+  document.documentElement.style.setProperty("--fs", S.num("size", 17) + "px");
+  document.getElementById("tag").textContent = S.p("label", "Chat");
+  function fit() { const extra = row.scrollWidth - row.parentElement.clientWidth + (document.getElementById("tag").offsetWidth || 0); row.style.transform = `translateX(${-Math.max(0, extra)}px)`; }
+  function add(e) {
+    if (e.type !== "chat" || !e.text || e.text.startsWith("!")) return;
+    const el = document.createElement("span"); el.className = "m"; el.style.setProperty("--u", colors[e.platform] || "var(--accent)");
+    el.innerHTML = `<b>${S.esc(e.user)}</b>${S.esc(e.text.slice(0, 120))}`;
+    row.appendChild(el);
+    while (row.children.length > max) row.firstChild.remove();
+    fit();
+  }
+  S.connect((msg) => { if (msg.type === "event") add(msg.event); else if (msg.type === "history" && !row.children.length) msg.events.forEach(add); });
+</script>
+</body>
+</html>

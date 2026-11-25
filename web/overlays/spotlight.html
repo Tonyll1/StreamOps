@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Mensaje destacado</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  body { height:100vh; display:flex; align-items:flex-end; justify-content:center; }
+  .box { max-width:min(820px,94vw); padding:14px 20px; display:flex; gap:14px; align-items:center; border-left:4px solid var(--accent); opacity:0; transform:translateY(14px); transition:opacity .3s, transform .3s var(--ease); }
+  .box.on { opacity:1; transform:none; }
+  .avatar { width:54px; height:54px; font-size:22px; }
+  .who { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--accent); }
+  .text { font-size:var(--fs,26px); font-weight:700; line-height:1.25; word-break:break-word; } .text::after { content:""; }
+  .box.typing .text::after { content:"▍"; color:var(--accent); animation:blinkc .7s steps(2) infinite; } @keyframes blinkc { 50% { opacity:0; } }
+</style>
+</head>
+<body>
+<div class="panel box" id="box"><span class="avatar" id="av"></span><div><div class="who" id="who"></div><div class="text" id="text"></div></div></div>
+<script src="/static/overlay.js"></script>
+<script>
+  // Muestra un mensaje a la vez, en grande y escrito letra por letra.
+  // Modos: todos los mensajes, solo los que empiezan con un comando, o solo de quien envió regalos.
+  const S = StreamOps, box = document.getElementById("box"), textEl = document.getElementById("text");
+  const mode = S.p("mode", "all"), cmd = S.p("cmd", "!destacar").toLowerCase(), seconds = S.num("seconds", 7), type = S.flag("type", true), sound = S.p("sound");
+  document.getElementById("text").style.setProperty("--fs", S.num("size", 26) + "px");
+  const queue = [], donors = new Set(); let busy = false;
+  function show(e, text) {
+    busy = true;
+    document.getElementById("who").textContent = e.user;
+    document.getElementById("av").outerHTML = e.avatar ? `<img class="avatar" id="av" src="${S.esc(e.avatar)}" referrerpolicy="no-referrer">` : `<span class="avatar" id="av">${S.esc((e.user || "?").charAt(0).toUpperCase())}</span>`;
+    box.classList.add("on"); S.sound(sound);
+    const done = () => { box.classList.remove("typing"); setTimeout(() => { box.classList.remove("on"); setTimeout(() => { busy = false; if (queue.length) show(...queue.shift()); }, 350); }, seconds * 1000); };
+    if (!type) { textEl.textContent = text; return done(); }
+    textEl.textContent = ""; box.classList.add("typing"); let i = 0;
+    const timer = setInterval(() => { textEl.textContent = text.slice(0, ++i); if (i >= text.length) { clearInterval(timer); done(); } }, 32);
+  }
+  S.connect((msg) => {
+    if (msg.type !== "event") return;
+    const e = msg.event;
+    if (e.type === "gift") { donors.add(e.platform + ":" + e.user_id); return; }
+    if (e.type !== "chat" || !e.text) return;
+    let text = e.text.trim();
+    if (text.toLowerCase().startsWith(cmd)) text = text.slice(cmd.length).trim();
+    else if (mode === "cmd" || text.startsWith("!")) return;
+    if (mode === "donors" && !donors.has(e.platform + ":" + e.user_id) && e.platform !== "sim") return;
+    if (!text) return;
+    text = text.slice(0, 200);
+    if (busy) { if (queue.length < 8) queue.push([e, text]); } else show(e, text);
+  });
+</script>
+</body>
+</html>

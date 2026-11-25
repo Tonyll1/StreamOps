@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Preguntas</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  .box { width:min(480px,100%); }
+  #rows { display:flex; flex-direction:column; gap:6px; }
+  .q { display:flex; gap:10px; padding:9px 13px; border-left:3px solid var(--accent); font-size:16px; line-height:1.3; animation:in-left .3s var(--ease); word-break:break-word; }
+  .q .n { font-weight:800; color:var(--accent); } .q b { display:block; font-size:12px; color:var(--dim); font-weight:600; }
+  .empty { padding:9px 13px; color:var(--dim); font-size:14px; }
+</style>
+</head>
+<body>
+<div class="box"><div class="title" id="title"></div><div id="rows"></div></div>
+<script src="/static/overlay.js"></script>
+<script>
+  // Junta las preguntas del chat (mensajes con "?" o con un comando) para responderlas en orden.
+  const S = StreamOps, rows = document.getElementById("rows"), id = "streamops_questions_" + S.p("id", "1"), max = S.num("max", 5);
+  const cmd = S.p("cmd").toLowerCase(), done = S.p("done", "!respondida").toLowerCase(), owner = S.p("owner").replace(/^@/, "").toLowerCase();
+  let list = [];
+  try { if (!S.flag("reset")) list = JSON.parse(localStorage.getItem(id)) || []; } catch (err) { list = []; }
+  document.getElementById("title").textContent = S.p("title", "Preguntas del chat");
+  function draw() {
+    rows.innerHTML = list.slice(0, max).map((q, i) => `<div class="panel q"><span class="n">${i + 1}</span><span><b>${S.esc(q.user)}</b>${S.esc(q.text)}</span></div>`).join("") || `<div class="panel empty">${cmd ? "Pregunta con " + S.esc(cmd) : "Escribe tu pregunta con ?"}</div>`;
+    try { localStorage.setItem(id, JSON.stringify(list.slice(0, 30))); } catch (err) { /* sin almacenamiento */ }
+  }
+  draw();
+  S.connect((msg) => {
+    if (msg.type !== "event" || msg.event.type !== "chat") return;
+    const e = msg.event, text = e.text.trim(), low = text.toLowerCase();
+    if (low.startsWith(done) && (!owner || e.user.toLowerCase() === owner || e.platform === "sim")) { list.shift(); return draw(); }
+    let question = "";
+    if (cmd) { if (low.startsWith(cmd)) question = text.slice(cmd.length).trim(); }
+    else if (text.includes("?") && !text.startsWith("!") && text.length >= 6) question = text;
+    if (!question || list.some((q) => q.text.toLowerCase() === question.toLowerCase())) return;
+    list.push({ user: e.user, text: question.slice(0, 160) });
+    draw();
+  });
+</script>
+</body>
+</html>

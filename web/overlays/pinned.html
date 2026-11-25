@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Mensaje fijado</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  .pin { display:inline-flex; align-items:center; gap:12px; max-width:min(640px,100%); padding:10px 16px; border-left:4px solid var(--accent); }
+  .pin.swap { animation:pop .4s var(--ease); } .pin[hidden] { display:none; }
+  .ico { font-size:20px; } .lab { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.09em; color:var(--accent); }
+  .text { font-size:var(--fs,19px); font-weight:700; line-height:1.25; word-break:break-word; }
+</style>
+</head>
+<body>
+<div class="panel pin" id="pin" hidden><span class="ico">📌</span><div><div class="lab" id="lab"></div><div class="text" id="text"></div></div></div>
+<script src="/static/overlay.js"></script>
+<script>
+  // Mensaje fijo en pantalla que cambias desde el chat: "!fijar texto" lo pone y "!quitar" lo borra.
+  const S = StreamOps, pin = document.getElementById("pin"), id = "streamops_pin_" + S.p("id", "1");
+  const set = S.p("cmd", "!fijar").toLowerCase(), clear = S.p("clear", "!quitar").toLowerCase(), owner = S.p("owner").replace(/^@/, "").toLowerCase(), sound = S.p("sound");
+  document.getElementById("lab").textContent = S.p("title", "Fijado");
+  document.getElementById("text").style.setProperty("--fs", S.num("size", 19) + "px");
+  function draw(text, animate) {
+    pin.hidden = !text; document.getElementById("text").textContent = text || "";
+    if (text && animate) { pin.classList.remove("swap"); void pin.offsetWidth; pin.classList.add("swap"); S.sound(sound); }
+  }
+  let saved = ""; try { saved = localStorage.getItem(id) || ""; } catch (err) { saved = ""; }
+  draw(saved || S.p("text"), false);
+  S.connect((msg) => {
+    if (msg.type !== "event" || msg.event.type !== "chat") return;
+    const e = msg.event, text = e.text.trim(), low = text.toLowerCase();
+    if (owner && e.user.toLowerCase() !== owner && e.platform !== "sim") return;
+    let next = null;
+    if (low.startsWith(set)) next = text.slice(set.length).trim().slice(0, 180); else if (low.startsWith(clear)) next = "";
+    if (next === null) return;
+    try { localStorage.setItem(id, next); } catch (err) { /* sin almacenamiento */ }
+    draw(next, true);
+  });
+</script>
+</body>
+</html>

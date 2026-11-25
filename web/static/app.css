@@ -140,6 +140,7 @@ input[type=range]::-webkit-slider-thumb:hover { transform:scale(1.15); }
 .search { position:relative; width:220px; } .search .ic { position:absolute; left:9px; top:50%; margin-top:-7px; width:14px; height:14px; color:var(--mute); } .search input { margin:0; padding-left:30px; }
 .vfilter { display:inline-flex; gap:2px; margin-bottom:12px; padding:2px; border-radius:8px; background:var(--bg); border:1px solid var(--line); }
 .vfilter button { padding:4px 12px; border-radius:6px; border:0; background:transparent; color:var(--dim); font:500 12px/1.5 inherit; font-family:inherit; cursor:pointer; transition:background var(--fast), color var(--fast); }
+.vfilter button small { color:var(--mute); margin-left:2px; }
 .vfilter button:hover { color:var(--text); } .vfilter button.on { background:var(--hover); color:var(--text); }
 .voices { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:6px; max-height:430px; overflow-y:auto; padding-right:4px; contain:content; }
 .voice { display:flex; align-items:center; gap:9px; padding:7px 9px; border-radius:7px; border:1px solid var(--line); background:var(--bg); cursor:pointer; font-size:13px; transition:border-color var(--fast), background var(--fast); }

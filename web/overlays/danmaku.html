@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Chat volador</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  body { padding:0; height:100vh; }
+  .d { position:absolute; left:100vw; white-space:nowrap; font-weight:800; font-size:var(--fs,26px); will-change:transform; animation:fly var(--t,9s) linear forwards;
+       -webkit-text-stroke:.22em #000; paint-order:stroke fill; }
+  .d b { color:var(--u,var(--accent)); margin-right:.3em; }
+  @keyframes fly { to { transform:translateX(calc(-100vw - 100%)); } }
+</style>
+</head>
+<body>
+<script src="/static/overlay.js"></script>
+<script>
+  // Los mensajes cruzan la pantalla de derecha a izquierda, como en los directos japoneses.
+  const S = StreamOps, size = S.num("size", 26), speed = S.num("speed", 1), showName = S.flag("name", true), cap = S.num("max", 40), area = S.num("area", 100) / 100;
+  const palette = ["#ffffff", "#ffd54a", "#3ecf8e", "#5b9dff", "#e668a7", "#ff6b35", "#34c9c9"], lanes = [];
+  let alive = 0;
+  function lane() {
+    const count = Math.max(1, Math.floor(innerHeight * area / (size * 1.6))), now = Date.now();
+    let best = 0;
+    for (let i = 0; i < count; i++) { if (!lanes[i] || lanes[i] < now) { best = i; break; } if (lanes[i] < lanes[best]) best = i; }
+    lanes[best] = now + 2200 / speed;
+    return best;
+  }
+  S.connect((msg) => {
+    if (msg.type !== "event" || msg.event.type !== "chat" || !msg.event.text || msg.event.text.startsWith("!") || alive >= cap) return;
+    const e = msg.event, el = document.createElement("div");
+    let h = 0; for (const c of e.user_id || e.user) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+    el.className = "d"; el.style.setProperty("--fs", size + "px"); el.style.setProperty("--u", palette[h % palette.length]);
+    el.style.setProperty("--t", ((8 + Math.random() * 3) / speed).toFixed(1) + "s");
+    el.style.top = (6 + lane() * size * 1.6) + "px";
+    el.innerHTML = (showName ? `<b>${S.esc(e.user)}</b>` : "") + S.esc(e.text.slice(0, 90));
+    alive++; el.addEventListener("animationend", () => { el.remove(); alive--; });
+    document.body.appendChild(el);
+  });
+</script>
+</body>
+</html>

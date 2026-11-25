@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Muro de emojis</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  body { padding:0; height:100vh; }
+  .e { position:absolute; font-size:var(--s,40px); line-height:1; will-change:transform,opacity; pointer-events:none; }
+  .rise .e { bottom:-70px; animation:rise var(--d,3.5s) ease-out forwards; } .fall .e { top:-70px; animation:fall var(--d,3.5s) ease-in forwards; }
+  .burst .e { animation:burst 1.6s var(--ease) forwards; }
+  @keyframes rise { 10% { opacity:1; } 100% { transform:translate(var(--x,0),-112vh) rotate(var(--r,0)); opacity:0; } }
+  @keyframes fall { 100% { transform:translate(var(--x,0),118vh) rotate(var(--r,0)); } }
+  @keyframes burst { 0% { transform:scale(.2); opacity:0; } 25% { transform:scale(1.25); opacity:1; } 70% { opacity:1; } 100% { transform:scale(1) translateY(-30px); opacity:0; } }
+</style>
+</head>
+<body>
+<script src="/static/overlay.js"></script>
+<script>
+  // Los emojis que escribe el chat aparecen volando por la pantalla.
+  const S = StreamOps, size = S.num("size", 40), cap = S.num("max", 70), perMsg = S.num("each", 6), mode = S.p("mode", "rise");
+  document.body.classList.add(mode);
+  const pattern = /\p{Extended_Pictographic}(‍\p{Extended_Pictographic}|️|\p{Emoji_Modifier})*/gu;
+  let alive = 0;
+  function spawn(char) {
+    if (alive >= cap) return;
+    alive++;
+    const el = document.createElement("div"); el.className = "e"; el.textContent = char;
+    el.style.left = (4 + Math.random() * 90) + "%"; if (mode === "burst") el.style.top = (8 + Math.random() * 75) + "%";
+    el.style.setProperty("--s", (size * (0.7 + Math.random() * 0.8)).toFixed(0) + "px"); el.style.setProperty("--d", (2.6 + Math.random() * 2.2).toFixed(2) + "s");
+    el.style.setProperty("--x", ((Math.random() - 0.5) * 180).toFixed(0) + "px"); el.style.setProperty("--r", ((Math.random() - 0.5) * 90).toFixed(0) + "deg");
+    el.addEventListener("animationend", () => { el.remove(); alive--; });
+    document.body.appendChild(el);
+  }
+  S.connect((msg) => {
+    if (msg.type !== "event" || msg.event.type !== "chat") return;
+    (msg.event.text.match(pattern) || []).slice(0, perMsg).forEach((char, i) => setTimeout(() => spawn(char), i * 90));
+  });
+</script>
+</body>
+</html>

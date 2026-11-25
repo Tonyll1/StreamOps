@@ -3,16 +3,43 @@
 <head>
 <meta charset="utf-8"><title>StreamOps · Chat</title>
 <link rel="stylesheet" href="/static/overlay.css">
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=JetBrains+Mono:wght@500;700&family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
-  body { height:100vh; display:flex; flex-direction:column; justify-content:flex-end; }
-  #list { display:flex; flex-direction:column; gap:6px; width:min(460px,100%); }
-  .msg { display:flex; gap:9px; align-items:flex-start; padding:7px 11px; animation:in-left .3s var(--ease); font-size:16px; line-height:1.35; word-break:break-word; }
+  body { height:100vh; display:flex; flex-direction:column; justify-content:flex-end; --fs:16px; }
+  body.top { justify-content:flex-start; } body.right { align-items:flex-end; }
+  #list { display:flex; flex-direction:column; gap:6px; width:min(var(--w,460px),100%); }
+  .msg { --u:var(--accent); display:flex; gap:9px; align-items:flex-start; padding:7px 11px; font-size:var(--fs); line-height:1.35; word-break:break-word; animation:in-left .3s var(--ease); }
+  .right .msg { animation-name:in-right; flex-direction:row-reverse; text-align:right; }
+  .anim-fade .msg { animation-name:in-fade; } .anim-pop .msg { animation-name:pop; } .anim-up .msg { animation-name:in-up; }
+  @keyframes in-right { from { opacity:0; transform:translateX(18px); } } @keyframes in-fade { from { opacity:0; } }
   .msg.out { animation:out-fade .4s ease forwards; }
-  .msg .avatar { width:28px; height:28px; font-size:12px; margin-top:1px; }
-  .who { font-weight:700; margin-right:6px; }
-  .tiktok .who { color:#ff8fa3; } .twitch .who { color:#b39dff; } .kick .who { color:#7dfc57; } .sim .who { color:var(--accent); }
+  .msg .avatar { width:1.75em; height:1.75em; font-size:var(--fs); margin-top:1px; } .msg .avatar b { font-size:.7em; }
+  .who { font-weight:700; margin-right:6px; color:var(--u); }
+  .badge { display:inline-grid; place-items:center; min-width:1.5em; height:1.5em; padding:0 .3em; margin-right:5px; border-radius:4px; font-size:.62em; font-weight:800; vertical-align:.15em; background:#222; color:#fff; }
+  .badge.twitch { background:#6441a5; } .badge.kick { background:#53fc18; color:#0b1f03; } .badge.sim { background:var(--accent); color:var(--ink); }
+  .msg.ev { font-weight:600; } .msg.ev .who { color:var(--gold); }
+
+  /* estilos */
   .bubble .msg { background:var(--panel); border:1px solid var(--line); border-radius:10px; }
   .plain .msg { padding:2px 0; text-shadow:0 1px 3px rgba(0,0,0,.95), 0 0 8px rgba(0,0,0,.7); }
+  .outline .msg { padding:2px 0; font-weight:800; -webkit-text-stroke:.28em #000; paint-order:stroke fill; }
+  .card .msg { background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--u); border-radius:8px; padding:10px 14px; flex-direction:column; gap:2px; }
+  .card .msg .avatar { display:none; } .card .who { display:block; font-size:.8em; text-transform:uppercase; letter-spacing:.06em; }
+  .compact #list { gap:1px; } .compact .msg { padding:3px 9px; background:rgba(10,10,12,.78); border-radius:0; white-space:nowrap; overflow:hidden; } .compact .msg > span { overflow:hidden; text-overflow:ellipsis; } .compact .avatar { display:none; }
+  .terminal { font-family:"JetBrains Mono",Consolas,monospace; } .terminal #list { gap:0; padding:10px 12px; background:rgba(5,12,8,.9); border:1px solid #1f5c38; border-radius:6px; }
+  .terminal .msg { padding:1px 0; color:#7dfca0; } .terminal .who { color:#fff; } .terminal .who::before { content:"> "; color:#3ecf8e; } .terminal .who::after { content:":"; } .terminal .avatar { display:none; }
+  .comic { font-family:Bangers,"Segoe UI",sans-serif; letter-spacing:.03em; } .comic #list { gap:10px; }
+  .comic .msg { background:#fff; color:#111; border:3px solid #111; border-radius:16px; box-shadow:5px 5px 0 #111; padding:8px 14px; font-size:calc(var(--fs) * 1.2); }
+  .comic .msg:nth-child(odd) { transform:rotate(-1deg); } .comic .msg:nth-child(even) { transform:rotate(1deg); } .comic .who { color:#e0332e; } .comic .avatar { display:none; }
+  .pixel { font-family:"Press Start 2P",monospace; } .pixel #list { gap:8px; }
+  .pixel .msg { font-size:calc(var(--fs) * .62); line-height:1.7; background:#1b1d3a; border:4px solid #fff; box-shadow:0 0 0 4px #1b1d3a; border-radius:0; image-rendering:pixelated; } .pixel .who { color:#ffd54a; display:block; margin-bottom:4px; } .pixel .avatar { display:none; }
+  .neon .msg { background:rgba(8,8,14,.82); border:1px solid var(--u); border-radius:8px; box-shadow:0 0 12px -2px var(--u), inset 0 0 10px -6px var(--u); } .neon .who { text-shadow:0 0 8px var(--u); }
+  .split #list { gap:8px; } .split .msg { max-width:82%; border-radius:16px 16px 16px 4px; background:#2b2d33; align-self:flex-start; }
+  .split .msg:nth-child(even) { align-self:flex-end; flex-direction:row-reverse; border-radius:16px 16px 4px 16px; background:var(--accent); color:var(--ink); } .split .msg:nth-child(even) .who { color:var(--ink); }
+  .bar .msg { background:linear-gradient(90deg, color-mix(in srgb,var(--u) 55%,#111) 0, rgba(17,18,21,.9) 38%); border-radius:6px; }
+  .bar .who { color:#fff; } .glassless { }
+  .tag .msg { padding:0; gap:0; align-items:stretch; border-radius:7px; overflow:hidden; background:var(--panel); } .tag .avatar { display:none; }
+  .tag .msg > span { display:flex; align-items:stretch; } .tag .who { background:var(--u); color:#111; padding:6px 10px; margin:0; white-space:nowrap; } .tag .txt { padding:6px 11px; }
 </style>
 </head>
 <body>
@@ -20,17 +47,35 @@
 <script src="/static/overlay.js"></script>
 <script>
   const S = StreamOps, list = document.getElementById("list");
-  const max = S.num("max", 8), fade = S.num("fade", 0), avatars = S.flag("avatars", true);
-  list.className = S.p("style", "bubble");
+  const max = S.num("max", 8), fade = S.num("fade", 0), avatars = S.flag("avatars", true), badges = S.flag("badges", false);
+  const names = S.p("names", "platform"), withEvents = S.flag("events", false), minLen = S.num("minlen", 0), hideCmd = S.flag("hidecmd", true);
+  document.body.classList.add(S.p("style", "bubble"), "anim-" + S.p("anim", "slide"));
+  if (S.p("from") === "top") document.body.classList.add("top");
+  if (S.p("align") === "right") document.body.classList.add("right");
+  document.body.style.setProperty("--fs", S.num("size", 16) + "px");
+  document.body.style.setProperty("--w", S.num("width", 460) + "px");
+  const platformColors = { tiktok: "#ff8fa3", twitch: "#b39dff", kick: "#7dfc57", sim: "var(--accent)" };
+  const palette = ["#ff6b35", "#ffd54a", "#3ecf8e", "#5b9dff", "#e668a7", "#9b7bff", "#34c9c9", "#ff8fa3", "#b6e36b", "#f2a65a"];
+  function userColor(e) {
+    if (names === "accent") return "var(--accent)";
+    if (names === "platform") return platformColors[e.platform] || "var(--accent)";
+    let h = 0; for (const c of e.platform + e.user_id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+    return palette[h % palette.length];
+  }
   function add(e) {
-    if (e.type !== "chat" || !e.text) return;
+    const isChat = e.type === "chat";
+    if (!isChat && !(withEvents && ["gift", "follow", "share", "sub", "raid"].includes(e.type))) return;
+    if (isChat && (!e.text || e.text.length < minLen || (hideCmd && e.text.startsWith("!")))) return;
     const el = document.createElement("div");
-    el.className = "msg " + e.platform;
+    el.className = "msg " + e.platform + (isChat ? "" : " ev");
+    el.style.setProperty("--u", userColor(e));
     const initial = S.esc((e.user || "?").charAt(0).toUpperCase());
-    const av = !avatars ? "" : e.avatar ? `<img class="avatar" src="${S.esc(e.avatar)}" referrerpolicy="no-referrer">` : `<span class="avatar">${initial}</span>`;
-    el.innerHTML = `${av}<span><span class="who">${S.esc(e.user)}</span>${S.esc(e.text)}</span>`;
-    list.appendChild(el);
-    while (list.children.length > max) list.firstChild.remove();
+    const av = !avatars ? "" : e.avatar ? `<img class="avatar" src="${S.esc(e.avatar)}" referrerpolicy="no-referrer">` : `<span class="avatar"><b>${initial}</b></span>`;
+    const badge = badges ? `<span class="badge ${e.platform}">${S.esc(e.platform.slice(0, 2).toUpperCase())}</span>` : "";
+    const body = isChat ? `<span class="who">${badge}${S.esc(e.user)}</span><span class="txt">${S.esc(e.text)}</span>` : `<span class="txt">${badge}${S.describe(e)}</span>`;
+    el.innerHTML = `${av}<span>${body}</span>`;
+    if (S.p("from") === "top") list.prepend(el); else list.appendChild(el);
+    while (list.children.length > max) (S.p("from") === "top" ? list.lastChild : list.firstChild).remove();
     if (fade > 0) setTimeout(() => { el.classList.add("out"); setTimeout(() => el.remove(), 400); }, fade * 1000);
   }
   S.connect((msg) => {
