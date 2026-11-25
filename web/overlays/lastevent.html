@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Último evento</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  .card { display:inline-flex; align-items:center; gap:12px; padding:9px 16px 9px 10px; min-width:240px; }
+  .card.swap { animation:pop .45s var(--ease); }
+  .avatar { width:44px; height:44px; font-size:18px; border:2px solid var(--accent); }
+  .lab { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.09em; color:var(--accent); }
+  .who { font-size:19px; font-weight:700; line-height:1.2; } .extra { font-size:13px; color:var(--dim); }
+</style>
+</head>
+<body>
+<div class="panel card" id="card"><span class="avatar" id="av">?</span><div><div class="lab" id="lab"></div><div class="who" id="who">—</div><div class="extra" id="extra"></div></div></div>
+<script src="/static/overlay.js"></script>
+<script>
+  const S = StreamOps, type = S.p("type", "follow");
+  const labels = { follow: "Último seguidor", gift: "Último regalo", share: "Último en compartir", sub: "Última suscripción", like: "Último like", raid: "Último raid" };
+  document.getElementById("lab").textContent = S.p("title", labels[type] || "Último evento");
+  const card = document.getElementById("card");
+  function show(e, animate) {
+    if (e.type !== type) return;
+    document.getElementById("who").textContent = e.user || "—";
+    document.getElementById("extra").textContent = type === "gift" ? `${e.count}× ${e.gift} · ${S.fmt(e.value)}` : type === "raid" ? `${e.count} personas` : "";
+    const av = document.getElementById("av");
+    av.outerHTML = e.avatar ? `<img class="avatar" id="av" src="${S.esc(e.avatar)}" referrerpolicy="no-referrer">` : `<span class="avatar" id="av">${S.esc((e.user || "?").charAt(0).toUpperCase())}</span>`;
+    if (animate) { card.classList.remove("swap"); void card.offsetWidth; card.classList.add("swap"); }
+  }
+  S.connect((msg) => {
+    if (msg.type === "event") show(msg.event, true);
+    else if (msg.type === "history") msg.events.forEach((e) => show(e, false));
+  });
+</script>
+</body>
+</html>

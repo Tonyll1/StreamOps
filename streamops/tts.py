@@ -133,10 +133,17 @@ class TTS:
                 continue
             if samples is None:
                 continue
+            # Avisa a los overlays (subtítulos) de lo que se va a leer.
+            shown = self.find_voice(voice) if voice else None
+            self.app.notify({
+                "type": "tts", "text": text, "seconds": round(len(samples) / rate, 2),
+                "voice": shown or self.app.config["tts"].get("voice", ""),
+            })
             done = self.app.mixer.play(
                 resample(to_stereo(samples), rate), kind="tts", volume=float(self.app.config["tts"]["volume"])
             )
             done.wait(timeout=60)
+            self.app.notify({"type": "tts_end"})
 
     # ---- síntesis -------------------------------------------------------
     def _piper(self, name: str):

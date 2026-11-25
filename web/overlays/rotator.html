@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Tops rotativos</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  .box { width:min(380px,100%); }
+  #rows { display:flex; flex-direction:column; gap:5px; }
+  #rows.swap .row { animation:in-left .35s var(--ease) backwards; }
+  #rows.swap .row:nth-child(2) { animation-delay:.05s; } #rows.swap .row:nth-child(3) { animation-delay:.1s; } #rows.swap .row:nth-child(4) { animation-delay:.15s; } #rows.swap .row:nth-child(5) { animation-delay:.2s; }
+  .row { display:flex; align-items:center; gap:10px; padding:7px 12px; border-left:3px solid var(--accent); font-size:16px; }
+  .row:first-child { border-left-color:var(--gold); }
+  .pos { width:18px; font-weight:800; color:var(--dim); } .nm { flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; } .vl { font-weight:800; }
+  .empty { color:var(--dim); font-size:14px; padding:8px 12px; }
+</style>
+</head>
+<body>
+<div class="box"><div class="title" id="title"></div><div id="rows"></div></div>
+<script src="/static/overlay.js"></script>
+<script>
+  // Un solo espacio en pantalla que va alternando entre varios tops.
+  const S = StreamOps, rowsEl = document.getElementById("rows"), scope = S.p("scope") === "all" ? "all" : "session";
+  const names = { coins: "Top donadores", likes: "Top likes", shares: "Top compartidos", comments: "Top chat" };
+  const icons = { coins: "💎", likes: "❤", shares: "↗", comments: "💬" };
+  const metrics = S.p("metrics", "coins,likes,shares").split(",").filter((m) => names[m]);
+  const limit = Math.max(1, Math.min(10, S.num("limit", 3))), seconds = Math.max(3, S.num("seconds", 8));
+  let state = null, index = 0;
+  function draw(animate) {
+    const metric = metrics[index % metrics.length], rows = ((state && state[scope] && state[scope][metric]) || []).slice(0, limit);
+    document.getElementById("title").textContent = names[metric] + (scope === "all" ? " (histórico)" : "");
+    rowsEl.innerHTML = rows.map((r, i) => `<div class="panel row"><span class="pos">${i + 1}</span><span class="nm">${S.esc(r.name)}</span><span class="vl num">${icons[metric]} ${S.fmt(r.value)}</span></div>`).join("") || '<div class="panel empty">Aún sin datos</div>';
+    if (animate) { rowsEl.classList.remove("swap"); void rowsEl.offsetWidth; rowsEl.classList.add("swap"); }
+  }
+  setInterval(() => { index++; draw(true); }, seconds * 1000);
+  S.connect((msg) => { if (msg.type === "state") { state = msg; draw(false); } });
+</script>
+</body>
+</html>

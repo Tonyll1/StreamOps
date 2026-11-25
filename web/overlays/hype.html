@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Medidor de actividad</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  .box { width:min(420px,100%); padding:11px 14px; }
+  .head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px; }
+  .name { font-weight:700; font-size:15px; } .lvl { font-weight:800; font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--c,var(--dim)); }
+  .track { display:flex; gap:3px; height:16px; } .seg { flex:1; border-radius:3px; background:rgba(255,255,255,.1); transition:background .25s; }
+  .seg.on { background:var(--c,var(--accent)); }
+  .box.max { animation:shake .5s linear infinite; } @keyframes shake { 25% { transform:translate(1px,-1px); } 75% { transform:translate(-1px,1px); } }
+</style>
+</head>
+<body>
+<div class="panel box" id="box"><div class="head"><span class="name" id="name"></span><span class="lvl" id="lvl"></span></div><div class="track" id="track"></div></div>
+<script src="/static/overlay.js"></script>
+<script>
+  // Sube con la actividad del chat (mensajes, likes, regalos) y baja sola con el tiempo.
+  const S = StreamOps, box = document.getElementById("box"), track = document.getElementById("track");
+  const SEG = 20, full = Math.max(10, S.num("full", 100)), decay = S.num("decay", 4), sound = S.p("sound");
+  const weights = { chat: S.num("chat", 2), like: S.num("like", 0.3), gift: S.num("gift", 1), follow: S.num("follow", 8), share: S.num("share", 6), sub: S.num("sub", 20) };
+  const levels = [[0, "Tranquilo", "#5b9dff"], [0.3, "Animado", "#3ecf8e"], [0.6, "Encendido", "#ffd54a"], [0.85, "¡Locura!", "#ff6b35"]];
+  document.getElementById("name").textContent = S.p("title", "Nivel de hype");
+  track.innerHTML = Array(SEG).fill('<div class="seg"></div>').join("");
+  let energy = 0, wasMax = false;
+  function draw() {
+    const ratio = Math.min(1, energy / full); let level = levels[0];
+    for (const l of levels) if (ratio >= l[0]) level = l;
+    box.style.setProperty("--c", level[2]); document.getElementById("lvl").textContent = level[1];
+    [...track.children].forEach((seg, i) => seg.classList.toggle("on", i < Math.round(ratio * SEG)));
+    const isMax = ratio >= 1; box.classList.toggle("max", isMax);
+    if (isMax && !wasMax) S.sound(sound);
+    wasMax = isMax;
+  }
+  setInterval(() => { energy = Math.max(0, energy - decay / 4); draw(); }, 250);
+  S.connect((msg) => {
+    if (msg.type !== "event") return;
+    const e = msg.event, w = weights[e.type] || 0;
+    energy = Math.min(full * 1.15, energy + w * (e.type === "like" ? (e.count || 1) : e.type === "gift" ? Math.max(1, e.value) : 1));
+  });
+</script>
+</body>
+</html>

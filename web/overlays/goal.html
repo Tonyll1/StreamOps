@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Meta</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  .goal { width:min(560px,100%); padding:12px 14px; position:relative; }
+  .head { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:8px; }
+  .name { font-weight:700; font-size:17px; } .val { font-weight:700; font-size:15px; color:var(--dim); } .val b { color:#fff; font-size:19px; }
+  .track { height:22px; border-radius:7px; background:rgba(255,255,255,.1); overflow:hidden; position:relative; }
+  .fill { height:100%; width:100%; background:var(--accent); transform:scaleX(0); transform-origin:left; transition:transform .8s var(--ease); border-radius:7px; }
+  .pct { position:absolute; inset:0; display:grid; place-items:center; font-weight:800; font-size:12px; text-shadow:0 1px 3px rgba(0,0,0,.7); }
+  .goal.done .fill { background:var(--ok); } .goal.done .name::after { content:" · ¡Meta cumplida!"; color:var(--ok); }
+  #gif { position:absolute; right:10px; bottom:100%; max-height:120px; max-width:160px; display:none; animation:pop .5s var(--ease); }
+  .goal.done #gif { display:block; }
+  /* variante circular */
+  .ring { width:190px; padding:16px; text-align:center; } .ring svg { width:150px; height:150px; transform:rotate(-90deg); }
+  .ring circle { fill:none; stroke-width:12; } .ring .bg { stroke:rgba(255,255,255,.1); } .ring .fg { stroke:var(--accent); stroke-linecap:round; transition:stroke-dashoffset .8s var(--ease); }
+  .ring .mid { margin-top:-104px; height:104px; } .ring .mid b { display:block; font-size:28px; } .ring .name { font-size:14px; margin-top:8px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="/static/overlay.js"></script>
+<script>
+  const S = StreamOps, metric = S.p("metric", "coins"), target = Math.max(1, S.num("goal", 1000)), ring = S.p("style") === "ring";
+  const names = { coins: "Meta de monedas", likes: "Meta de likes", follows: "Meta de seguidores", shares: "Meta de compartidos" };
+  const title = S.p("title", names[metric] || "Meta"), gif = S.p("gif"), sound = S.p("sound"), start = S.num("start", 0);
+  const root = document.getElementById("root"); let wasDone = null;
+  const C = 2 * Math.PI * 62;
+  root.innerHTML = ring
+    ? `<div class="panel goal ring" id="g"><svg viewBox="0 0 150 150"><circle class="bg" cx="75" cy="75" r="62"/><circle class="fg" id="fg" cx="75" cy="75" r="62" stroke-dasharray="${C}" stroke-dashoffset="${C}"/></svg>
+       <div class="mid"><b class="num" id="cur">0</b><span class="val">de ${S.fmt(target)}</span></div><div class="name">${S.esc(title)}</div></div>`
+    : `<div class="panel goal" id="g">${gif ? `<img id="gif" src="${S.media(gif)}">` : ""}<div class="head"><span class="name">${S.esc(title)}</span><span class="val"><b class="num" id="cur">0</b> / ${S.fmt(target)}</span></div>
+       <div class="track"><div class="fill" id="fill"></div><div class="pct num" id="pct">0%</div></div></div>`;
+  function draw(value) {
+    value += start;
+    const ratio = Math.min(1, value / target), done = value >= target;
+    document.getElementById("cur").textContent = S.fmt(value);
+    if (ring) document.getElementById("fg").style.strokeDashoffset = C * (1 - ratio);
+    else { document.getElementById("fill").style.transform = `scaleX(${ratio})`; document.getElementById("pct").textContent = Math.floor(ratio * 100) + "%"; }
+    document.getElementById("g").classList.toggle("done", done);
+    if (done && wasDone === false) S.sound(sound);
+    wasDone = done;
+  }
+  S.connect((msg) => { if (msg.type === "state") draw((msg.counters && msg.counters[metric]) || 0); });
+</script>
+</body>
+</html>

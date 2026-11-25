@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Celebración</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style> body { padding:0; height:100vh; } canvas { position:absolute; inset:0; width:100%; height:100%; } </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script src="/static/overlay.js"></script>
+<script>
+  // Confeti o fuegos artificiales a pantalla completa cuando llega un evento grande.
+  const S = StreamOps, canvas = document.getElementById("c"), ctx = canvas.getContext("2d");
+  const type = S.p("type", "gift"), min = S.num("min", 100), mode = S.p("style", "confetti"), sound = S.p("sound");
+  const colors = ["#ff6b35", "#ffd54a", "#3ecf8e", "#5b9dff", "#e668a7", "#ffffff"];
+  let parts = [], running = false;
+  function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+  addEventListener("resize", resize); resize();
+  function confetti(n) {
+    for (let i = 0; i < n; i++) parts.push({ x: Math.random() * canvas.width, y: -20 - Math.random() * canvas.height * 0.4, vx: (Math.random() - 0.5) * 4, vy: 2 + Math.random() * 4,
+      w: 6 + Math.random() * 6, h: 10 + Math.random() * 8, r: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3, c: colors[i % colors.length], life: 1, g: 0.06, fade: 0 });
+  }
+  function firework() {
+    const x = canvas.width * (0.15 + Math.random() * 0.7), y = canvas.height * (0.15 + Math.random() * 0.4), c = colors[Math.floor(Math.random() * colors.length)];
+    for (let i = 0; i < 70; i++) { const a = (i / 70) * Math.PI * 2, sp = 2 + Math.random() * 5;
+      parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, w: 4, h: 4, r: 0, vr: 0, c, life: 1, g: 0.05, fade: 0.012 + Math.random() * 0.01 }); }
+  }
+  function frame() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    parts = parts.filter((p) => p.life > 0 && p.y < canvas.height + 40);
+    for (const p of parts) {
+      p.vy += p.g; p.x += p.vx; p.y += p.vy; p.r += p.vr; p.life -= p.fade;
+      ctx.save(); ctx.globalAlpha = Math.max(0, p.life); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = p.c;
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); ctx.restore();
+    }
+    if (parts.length) requestAnimationFrame(frame); else { running = false; ctx.clearRect(0, 0, canvas.width, canvas.height); }
+  }
+  function celebrate(strength) {
+    if (mode === "fireworks") { const n = Math.min(8, 2 + Math.floor(strength)); for (let i = 0; i < n; i++) setTimeout(firework, i * 320); }
+    else confetti(Math.min(400, 120 + strength * 60));
+    S.sound(sound);
+    if (!running) { running = true; requestAnimationFrame(frame); }
+  }
+  S.connect((msg) => {
+    if (msg.type !== "event" || msg.event.type !== type) return;
+    const e = msg.event, amount = type === "gift" ? e.value : type === "like" ? e.count : 1;
+    if (amount >= min || (type !== "gift" && type !== "like")) celebrate(type === "gift" ? amount / Math.max(min, 1) : 1);
+  });
+</script>
+</body>
+</html>

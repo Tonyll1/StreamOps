@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Actividad</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  #list { display:flex; flex-direction:column; gap:5px; width:min(420px,100%); }
+  .row { --c:var(--accent); display:flex; align-items:center; gap:9px; padding:7px 11px; border-left:3px solid var(--c); font-size:15px; animation:in-left .3s var(--ease); white-space:nowrap; overflow:hidden; }
+  .row span { overflow:hidden; text-overflow:ellipsis; } .row .ico { flex:none; width:20px; text-align:center; }
+  .gift { --c:var(--gold); } .follow { --c:var(--info); } .share { --c:var(--ok); } .sub, .like { --c:var(--pink); }
+</style>
+</head>
+<body>
+<div class="title" id="title"></div>
+<div id="list"></div>
+<script src="/static/overlay.js"></script>
+<script>
+  const S = StreamOps, list = document.getElementById("list"), max = S.num("max", 6);
+  const types = S.p("types", "gift,follow,share,sub,raid").split(",");
+  const icons = { gift: "🎁", follow: "➕", share: "↗", sub: "⭐", like: "❤", raid: "🚀", chat: "💬" };
+  document.getElementById("title").textContent = S.p("title", "Actividad");
+  function add(e) {
+    if (!types.includes(e.type)) return;
+    const el = document.createElement("div");
+    el.className = "panel row " + e.type;
+    el.innerHTML = `<span class="ico">${icons[e.type] || ""}</span><span>${S.describe(e)}</span>`;
+    list.prepend(el);
+    while (list.children.length > max) list.lastChild.remove();
+  }
+  S.connect((msg) => {
+    if (msg.type === "event") add(msg.event);
+    else if (msg.type === "history" && !list.children.length) msg.events.forEach(add);
+  });
+</script>
+</body>
+</html>

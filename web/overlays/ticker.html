@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Cinta</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  body { padding:0; }
+  .bar { display:flex; align-items:center; width:100%; height:44px; background:var(--panel); border-top:1px solid var(--line); border-bottom:1px solid var(--line); overflow:hidden; }
+  .tag { flex:none; height:100%; display:grid; place-items:center; padding:0 16px; background:var(--accent); color:var(--ink); font-weight:800; font-size:13px; text-transform:uppercase; letter-spacing:.08em; z-index:1; }
+  .tag:empty { display:none; }
+  .track { display:flex; white-space:nowrap; will-change:transform; animation:scroll var(--t,30s) linear infinite; }
+  .track span { padding:0 28px; font-size:17px; font-weight:600; } .track span::after { content:"•"; margin-left:56px; color:var(--accent); }
+  @keyframes scroll { to { transform:translateX(-50%); } }
+</style>
+</head>
+<body>
+<div class="bar"><div class="tag" id="tag"></div><div class="track" id="track"></div></div>
+<script src="/static/overlay.js"></script>
+<script>
+  // Cinta de texto: mensajes fijos separados por "|" y, si se activa, los últimos eventos.
+  const S = StreamOps, track = document.getElementById("track");
+  const fixed = S.p("text", "Sígueme para no perderte los directos|Usa !voz para elegir la voz del bot").split("|").map((t) => t.trim()).filter(Boolean);
+  const withEvents = S.flag("events", false), recent = [];
+  document.getElementById("tag").textContent = S.p("label", "");
+  function draw() {
+    const items = fixed.map((t) => S.esc(t)).concat(recent);
+    const html = items.map((t) => `<span>${t}</span>`).join("");
+    track.innerHTML = html + html; // duplicado para un bucle continuo
+    track.style.setProperty("--t", Math.max(12, items.join("").length * 0.28 / S.num("speed", 1)).toFixed(1) + "s");
+  }
+  draw();
+  S.connect((msg) => {
+    if (!withEvents || msg.type !== "event") return;
+    const e = msg.event;
+    if (!["gift", "follow", "share", "sub"].includes(e.type)) return;
+    recent.unshift(S.describe(e)); recent.length = Math.min(recent.length, 5);
+    draw();
+  });
+</script>
+</body>
+</html>

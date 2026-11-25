@@ -71,6 +71,11 @@ class App:
         self._tasks.add(task)
         task.add_done_callback(self._tasks.discard)
 
+    def notify(self, message: dict) -> None:
+        """Difunde un mensaje desde cualquier hilo (voz, atajos)."""
+        if self.loop:
+            self.loop.call_soon_threadsafe(lambda: self.spawn(self.broadcast(message)))
+
     # ---- atajos ---------------------------------------------------------
     def bind_hotkeys(self) -> None:
         keys = self.config["hotkeys"]

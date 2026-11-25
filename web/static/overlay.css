@@ -1,0 +1,17 @@
+/* Base común de los overlays de stream: fondo transparente y fichas oscuras. */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=swap");
+:root { --accent:#ff6b35; --ink:#1a0d06; --panel:rgba(17,18,21,.9); --line:rgba(255,255,255,.09); --dim:rgba(255,255,255,.65);
+        --gold:#ffd54a; --ok:#3ecf8e; --pink:#e668a7; --info:#5b9dff; --ease:cubic-bezier(.2,.8,.2,1); }
+html, body { margin:0; background:transparent; overflow:hidden; }
+body { font-family:Inter,"Segoe UI",system-ui,sans-serif; color:#fff; padding:12px; box-sizing:border-box; }
+* { box-sizing:border-box; }
+.panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; }
+.title { display:inline-block; font-weight:700; font-size:14px; text-transform:uppercase; letter-spacing:.08em; padding:4px 12px; border-radius:7px; background:var(--accent); color:var(--ink); margin-bottom:8px; }
+.title:empty { display:none; }
+.avatar { width:32px; height:32px; border-radius:50%; object-fit:cover; background:#2a2c31; flex:none; display:grid; place-items:center; font-weight:700; font-size:13px; }
+b { font-weight:700; }
+.num { font-variant-numeric:tabular-nums; }
+@keyframes in-left { from { opacity:0; transform:translateX(-18px); } }
+@keyframes in-up { from { opacity:0; transform:translateY(12px); } }
+@keyframes out-fade { to { opacity:0; transform:translateY(-8px); } }
+@keyframes pop { 0% { transform:scale(.6); opacity:0; } 60% { transform:scale(1.08); } 100% { transform:scale(1); opacity:1; } }

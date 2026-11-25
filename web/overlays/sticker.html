@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Stickers</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  body { padding:0; height:100vh; }
+  .st { position:absolute; display:flex; flex-direction:column; align-items:center; gap:4px; animation:pop .45s var(--ease); will-change:transform,opacity; }
+  .st.out { animation:out-fade .45s ease forwards; }
+  .st img { max-width:var(--w,220px); max-height:var(--w,220px); display:block; }
+  .st .emo { font-size:calc(var(--w,220px) * .5); line-height:1; }
+  .st span { font-weight:800; font-size:18px; text-shadow:0 2px 0 rgba(0,0,0,.6), 0 3px 10px rgba(0,0,0,.9); }
+</style>
+</head>
+<body>
+<script src="/static/overlay.js"></script>
+<script>
+  // Muestra tu GIF o imagen en un punto al azar cada vez que ocurre el evento elegido.
+  const S = StreamOps, type = S.p("type", "follow"), gifs = S.p("gif").split(",").map((g) => g.trim()).filter(Boolean);
+  const sound = S.p("sound"), seconds = S.num("seconds", 4), width = S.num("size", 220), min = S.num("min", 0);
+  const match = S.p("match").toLowerCase(), showName = S.flag("name", true), pos = S.p("pos", "random");
+  let lastSound = 0;
+  function show(e) {
+    const el = document.createElement("div");
+    el.className = "st"; el.style.setProperty("--w", width + "px");
+    const pick = gifs.length ? gifs[Math.floor(Math.random() * gifs.length)] : "";
+    el.innerHTML = (pick ? `<img src="${S.media(pick)}">` : `<div class="emo">🎉</div>`) + (showName ? `<span>${S.esc(e.user)}</span>` : "");
+    const maxX = Math.max(0, innerWidth - width - 20), maxY = Math.max(0, innerHeight - width - 50);
+    if (pos === "center") { el.style.left = maxX / 2 + "px"; el.style.top = maxY / 2 + "px"; }
+    else { el.style.left = 10 + Math.random() * maxX + "px"; el.style.top = 10 + Math.random() * maxY + "px"; }
+    document.body.appendChild(el);
+    if (Date.now() - lastSound > 800) { lastSound = Date.now(); S.sound(sound); }
+    setTimeout(() => { el.classList.add("out"); setTimeout(() => el.remove(), 450); }, seconds * 1000);
+  }
+  S.connect((msg) => {
+    if (msg.type !== "event" || msg.event.type !== type) return;
+    const e = msg.event, amount = type === "gift" ? e.value : type === "like" ? e.count : 1;
+    if (amount < min) return;
+    if (match && !(type === "chat" ? e.text.toLowerCase().startsWith(match) : (e.gift || "").toLowerCase().includes(match))) return;
+    if (document.querySelectorAll(".st").length < 12) show(e);
+  });
+</script>
+</body>
+</html>

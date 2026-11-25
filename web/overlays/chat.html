@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Chat</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  body { height:100vh; display:flex; flex-direction:column; justify-content:flex-end; }
+  #list { display:flex; flex-direction:column; gap:6px; width:min(460px,100%); }
+  .msg { display:flex; gap:9px; align-items:flex-start; padding:7px 11px; animation:in-left .3s var(--ease); font-size:16px; line-height:1.35; word-break:break-word; }
+  .msg.out { animation:out-fade .4s ease forwards; }
+  .msg .avatar { width:28px; height:28px; font-size:12px; margin-top:1px; }
+  .who { font-weight:700; margin-right:6px; }
+  .tiktok .who { color:#ff8fa3; } .twitch .who { color:#b39dff; } .kick .who { color:#7dfc57; } .sim .who { color:var(--accent); }
+  .bubble .msg { background:var(--panel); border:1px solid var(--line); border-radius:10px; }
+  .plain .msg { padding:2px 0; text-shadow:0 1px 3px rgba(0,0,0,.95), 0 0 8px rgba(0,0,0,.7); }
+</style>
+</head>
+<body>
+<div id="list"></div>
+<script src="/static/overlay.js"></script>
+<script>
+  const S = StreamOps, list = document.getElementById("list");
+  const max = S.num("max", 8), fade = S.num("fade", 0), avatars = S.flag("avatars", true);
+  list.className = S.p("style", "bubble");
+  function add(e) {
+    if (e.type !== "chat" || !e.text) return;
+    const el = document.createElement("div");
+    el.className = "msg " + e.platform;
+    const initial = S.esc((e.user || "?").charAt(0).toUpperCase());
+    const av = !avatars ? "" : e.avatar ? `<img class="avatar" src="${S.esc(e.avatar)}" referrerpolicy="no-referrer">` : `<span class="avatar">${initial}</span>`;
+    el.innerHTML = `${av}<span><span class="who">${S.esc(e.user)}</span>${S.esc(e.text)}</span>`;
+    list.appendChild(el);
+    while (list.children.length > max) list.firstChild.remove();
+    if (fade > 0) setTimeout(() => { el.classList.add("out"); setTimeout(() => el.remove(), 400); }, fade * 1000);
+  }
+  S.connect((msg) => {
+    if (msg.type === "event") add(msg.event);
+    else if (msg.type === "history" && !list.children.length) msg.events.forEach(add);
+  });
+</script>
+</body>
+</html>

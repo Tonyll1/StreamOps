@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es" class="overlay">
+<head>
+<meta charset="utf-8"><title>StreamOps · Temporizador</title>
+<link rel="stylesheet" href="/static/overlay.css">
+<style>
+  .box { display:inline-block; padding:10px 20px 12px; text-align:center; position:relative; }
+  .lab { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--accent); }
+  .time { font-size:54px; font-weight:800; line-height:1.05; letter-spacing:-.02em; }
+  .box.low .time { color:#ef5350; animation:tick 1s steps(2) infinite; } @keyframes tick { 50% { opacity:.55; } }
+  .box.end .time { color:var(--dim); animation:none; }
+  .plus { position:absolute; right:-6px; top:-10px; font-weight:800; font-size:18px; color:var(--ok); animation:up 1.2s ease-out forwards; }
+  @keyframes up { from { opacity:1; transform:translateY(6px); } to { opacity:0; transform:translateY(-22px); } }
+</style>
+</head>
+<body>
+<div class="panel box" id="box"><div class="lab" id="lab"></div><div class="time num" id="time">00:00</div></div>
+<script src="/static/overlay.js"></script>
+<script>
+  // Cuenta regresiva que los espectadores alargan con regalos, follows, likes o compartidos.
+  const S = StreamOps, box = document.getElementById("box"), timeEl = document.getElementById("time");
+  const id = "streamops_timer_" + S.p("id", "1"), minutes = S.num("minutes", 10);
+  const add = { coin: S.num("coin", 1), follow: S.num("follow", 30), like: S.num("like", 0), share: S.num("share", 15), sub: S.num("sub", 120) };
+  const maxSec = S.num("cap", 0) * 60, sound = S.p("sound");
+  document.getElementById("lab").textContent = S.p("title", "Tiempo restante");
+  // El final se guarda en el navegador para sobrevivir a recargas de la fuente.
+  let endAt = Number(localStorage.getItem(id)) || 0, finished = false;
+  if (S.flag("reset") || !endAt) { endAt = Date.now() + minutes * 60000; localStorage.setItem(id, endAt); }
+  function extend(sec) {
+    if (sec <= 0) return;
+    endAt = Math.max(endAt, Date.now()) + sec * 1000;
+    if (maxSec) endAt = Math.min(endAt, Date.now() + maxSec * 1000);
+    localStorage.setItem(id, endAt); finished = false;
+    const plus = document.createElement("span"); plus.className = "plus"; plus.textContent = "+" + (sec >= 60 ? Math.round(sec / 60) + " min" : Math.round(sec) + " s");
+    box.appendChild(plus); setTimeout(() => plus.remove(), 1200);
+  }
+  function draw() {
+    const left = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+    const h = Math.floor(left / 3600), m = Math.floor((left % 3600) / 60), s = left % 60, pad = (n) => String(n).padStart(2, "0");
+    timeEl.textContent = (h ? h + ":" : "") + pad(m) + ":" + pad(s);
+    box.classList.toggle("low", left > 0 && left <= 30); box.classList.toggle("end", left === 0);
+    if (left === 0 && !finished) { finished = true; S.sound(sound); }
+  }
+  setInterval(draw, 250); draw();
+  S.connect((msg) => {
+    if (msg.type !== "event") return;
+    const e = msg.event;
+    if (e.type === "gift") extend(e.value * add.coin); else if (e.type === "like") extend((e.count || 1) * add.like); else if (add[e.type]) extend(add[e.type]);
+  });
+</script>
+</body>
+</html>

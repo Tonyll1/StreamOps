@@ -206,23 +206,134 @@ $("voiceGrid").addEventListener("click", async (e) => {
 $("btnTtsTest").onclick = () => testVoice(config.tts.voice || (voices[0] && voices[0].name) || "");
 
 // ---- overlays -----------------------------------------------------------
-const OVERLAYS = [["Alertas", "/overlay/alerts"], ["Top donador", "/overlay/leaderboard?metric=coins&limit=1&title=Top%20donador"],
-  ["Top donadores (sesión)", "/overlay/leaderboard?metric=coins&limit=5"], ["Top donadores general", "/overlay/leaderboard?metric=coins&scope=all&limit=5"],
-  ["Top likes", "/overlay/leaderboard?metric=likes&limit=5"], ["Top compartidos", "/overlay/leaderboard?metric=shares&limit=5"], ["Pulsómetro", "/overlay/heartrate"]];
-let overlaysDrawn = false;
+// Catálogo: cada overlay declara sus opciones; el panel arma la URL con ellas.
+const EV = [["gift", "Regalo"], ["follow", "Seguidor"], ["like", "Like"], ["share", "Compartido"], ["chat", "Mensaje"], ["sub", "Suscripción"]];
+const MET = [["coins", "Monedas"], ["likes", "Likes"], ["shares", "Compartidos"], ["comments", "Mensajes"]];
+const SCOPE = [["session", "Esta sesión"], ["all", "Histórico"]];
+const P = {
+  title: (def = "") => ({ k: "title", l: "Título", t: "text", d: def }),
+  type: (def, list = EV) => ({ k: "type", l: "Evento", t: "select", o: list, d: def }),
+  gif: (l = "Tu GIF o imagen") => ({ k: "gif", l, t: "image", d: "" }),
+  sound: (l = "Tu sonido") => ({ k: "sound", l, t: "audio", d: "" }),
+};
+const OVERLAYS = [
+  { id: "alerts", name: "Alertas", desc: "Imagen, GIF, video y texto de tus reglas", path: "alerts", test: "gift", params: [] },
+  { id: "top1", name: "Top donador", desc: "El mayor donador de la sesión", path: "leaderboard", test: "gift", preset: { limit: 1, title: "Top donador" },
+    params: [{ k: "metric", l: "Métrica", t: "select", o: MET, d: "coins" }, { k: "scope", l: "Periodo", t: "select", o: SCOPE, d: "session" }, { k: "limit", l: "Puestos", t: "number", d: 5 }, P.title()] },
+  { id: "top5", name: "Top donadores", desc: "Ranking de monedas de la sesión", path: "leaderboard", test: "gift", sameAs: "top1", preset: {} },
+  { id: "topall", name: "Top donadores general", desc: "Ranking histórico de todos tus directos", path: "leaderboard", test: "gift", sameAs: "top1", preset: { scope: "all" } },
+  { id: "toplikes", name: "Top likes", desc: "Quién ha dado más likes", path: "leaderboard", test: "like", sameAs: "top1", preset: { metric: "likes" } },
+  { id: "topshares", name: "Top compartidos", desc: "Quién ha compartido más", path: "leaderboard", test: "share", sameAs: "top1", preset: { metric: "shares" } },
+  { id: "rotator", name: "Tops rotativos", desc: "Un solo espacio que alterna entre varios tops", path: "rotator", test: "gift",
+    params: [{ k: "metrics", l: "Tops (separados por coma)", t: "text", d: "coins,likes,shares" }, { k: "scope", l: "Periodo", t: "select", o: SCOPE, d: "session" }, { k: "limit", l: "Puestos", t: "number", d: 3 }, { k: "seconds", l: "Segundos por top", t: "number", d: 8 }] },
+  { id: "goal", name: "Meta", desc: "Barra de progreso hacia un objetivo", path: "goal", test: "gift",
+    params: [{ k: "metric", l: "Métrica", t: "select", o: [["coins", "Monedas"], ["likes", "Likes"], ["follows", "Seguidores"], ["shares", "Compartidos"]], d: "coins" }, { k: "goal", l: "Objetivo", t: "number", d: 1000 },
+      { k: "start", l: "Empezar en", t: "number", d: 0 }, P.title(), { k: "style", l: "Forma", t: "select", o: [["", "Barra"], ["ring", "Anillo"]], d: "" }, P.gif("GIF al cumplirla"), P.sound("Sonido al cumplirla")] },
+  { id: "chat", name: "Chat", desc: "Mensajes de TikTok, Twitch y Kick juntos", path: "chat", test: "chat",
+    params: [{ k: "style", l: "Estilo", t: "select", o: [["bubble", "Burbujas"], ["plain", "Solo texto"]], d: "bubble" }, { k: "max", l: "Mensajes visibles", t: "number", d: 8 }, { k: "fade", l: "Ocultar tras (s, 0 = nunca)", t: "number", d: 0 }, { k: "avatars", l: "Mostrar avatares", t: "check", d: true }] },
+  { id: "feed", name: "Actividad reciente", desc: "Lista de regalos, follows y compartidos", path: "feed", test: "follow",
+    params: [P.title("Actividad"), { k: "types", l: "Eventos (separados por coma)", t: "text", d: "gift,follow,share,sub,raid" }, { k: "max", l: "Filas", t: "number", d: 6 }] },
+  { id: "lastevent", name: "Último seguidor / regalo", desc: "Tarjeta con el evento más reciente", path: "lastevent", test: "$type",
+    params: [P.type("follow", EV.filter((e) => e[0] !== "chat")), P.title()] },
+  { id: "stats", name: "Contadores", desc: "Monedas, likes, seguidores y compartidos", path: "stats", test: "like",
+    params: [{ k: "show", l: "Mostrar (separados por coma)", t: "text", d: "coins,likes,follows,shares" }, { k: "layout", l: "Dirección", t: "select", o: [["", "Horizontal"], ["col", "Vertical"]], d: "" }] },
+  { id: "sticker", name: "Stickers con tus GIFs", desc: "Tu GIF aparece en pantalla con cada evento", path: "sticker", test: "$type",
+    params: [P.type("follow"), P.gif(), P.sound(), { k: "match", l: "Solo si empieza con / regalo contiene", t: "text", d: "" }, { k: "min", l: "Mínimo (monedas o likes)", t: "number", d: 0 },
+      { k: "seconds", l: "Duración (s)", t: "number", d: 4 }, { k: "size", l: "Tamaño (px)", t: "number", d: 220 }, { k: "pos", l: "Posición", t: "select", o: [["random", "Al azar"], ["center", "Centro"]], d: "random" }, { k: "name", l: "Mostrar nombre", t: "check", d: true }] },
+  { id: "fountain", name: "Lluvia de corazones", desc: "Partículas que suben con likes, o tu propio GIF", path: "fountain", test: "$type",
+    params: [P.type("like"), { k: "emoji", l: "Emoji", t: "text", d: "" }, P.gif("O tu GIF/imagen"), { k: "dir", l: "Dirección", t: "select", o: [["", "Sube"], ["down", "Cae"]], d: "" }, { k: "size", l: "Tamaño (px)", t: "number", d: 34 }] },
+  { id: "confetti", name: "Celebración", desc: "Confeti o fuegos artificiales en regalos grandes", path: "confetti", test: "$type",
+    params: [P.type("gift"), { k: "min", l: "Mínimo (monedas o likes)", t: "number", d: 100 }, { k: "style", l: "Efecto", t: "select", o: [["confetti", "Confeti"], ["fireworks", "Fuegos artificiales"]], d: "confetti" }, P.sound()] },
+  { id: "timer", name: "Temporizador / subathon", desc: "Cuenta regresiva que el chat alarga", path: "timer", test: "gift",
+    params: [P.title("Tiempo restante"), { k: "minutes", l: "Minutos iniciales", t: "number", d: 10 }, { k: "coin", l: "Segundos por moneda", t: "number", d: 1 }, { k: "follow", l: "Segundos por seguidor", t: "number", d: 30 },
+      { k: "share", l: "Segundos por compartido", t: "number", d: 15 }, { k: "like", l: "Segundos por like", t: "number", d: 0 }, { k: "cap", l: "Tope (min, 0 = sin tope)", t: "number", d: 0 }, P.sound("Sonido al terminar"), { k: "reset", l: "Reiniciar al cargar", t: "check", d: false }] },
+  { id: "ticker", name: "Cinta de texto", desc: "Mensajes que se desplazan, estilo noticiero", path: "ticker", test: "follow",
+    params: [{ k: "text", l: "Mensajes (separados por |)", t: "text", d: "" }, { k: "label", l: "Etiqueta", t: "text", d: "" }, { k: "events", l: "Incluir últimos eventos", t: "check", d: false }, { k: "speed", l: "Velocidad", t: "number", d: 1 }] },
+  { id: "subtitle", name: "Subtítulos de la voz", desc: "Muestra lo que el bot está leyendo", path: "subtitle", test: "tts", params: [{ k: "voice", l: "Mostrar nombre de la voz", t: "check", d: true }] },
+  { id: "hype", name: "Medidor de hype", desc: "Sube con la actividad y baja con el tiempo", path: "hype", test: "gift",
+    params: [P.title("Nivel de hype"), { k: "full", l: "Puntos para llenarlo", t: "number", d: 100 }, { k: "decay", l: "Puntos que pierde por segundo", t: "number", d: 4 }, P.sound("Sonido al llenarse")] },
+  { id: "heartrate", name: "Pulsómetro", desc: "Tus pulsaciones en vivo", path: "heartrate", params: [] },
+];
+const COMMON = [{ k: "accent", l: "Color de acento", t: "color", d: "#ff6b35" }, { k: "scale", l: "Escala", t: "number", d: 1 }];
+const ovDef = (id) => OVERLAYS.find((o) => o.id === id);
+const ovParams = (o) => (o.sameAs ? ovDef(o.sameAs).params : o.params).concat(COMMON);
+let overlaysDrawn = false, ovValues = {};
+try { ovValues = JSON.parse(localStorage.getItem("streamops_overlays") || "{}"); } catch (err) { ovValues = {}; }
+function ovStore() { try { localStorage.setItem("streamops_overlays", JSON.stringify(ovValues)); } catch (err) { /* sin almacenamiento */ } }
+function ovGet(o, p) { const v = (ovValues[o.id] || {})[p.k]; return v !== undefined ? v : o.preset && o.preset[p.k] !== undefined ? o.preset[p.k] : p.d; }
+function ovUrl(o) {
+  const q = new URLSearchParams();
+  for (const p of ovParams(o)) {
+    const v = ovGet(o, p);
+    if (p.t === "check") { if (!!v !== !!p.d) q.set(p.k, v ? "1" : "0"); }
+    else if (String(v) !== String(p.d) && v !== "") q.set(p.k, p.t === "color" ? String(v).replace("#", "") : v);
+  }
+  const qs = q.toString();
+  return "/overlay/" + o.path + (qs ? "?" + qs : "");
+}
+function ovField(o, p) {
+  const v = ovGet(o, p), at = `data-ov="${o.id}" data-k="${p.k}"`;
+  if (p.t === "check") return `<label class="sw"><input type="checkbox" ${at} ${v ? "checked" : ""}><i></i>${p.l}</label>`;
+  if (p.t === "select") return `<label>${p.l}<select ${at}>${p.o.map(([val, lab]) => `<option value="${val}" ${String(v) === val ? "selected" : ""}>${lab}</option>`).join("")}</select></label>`;
+  if (p.t === "image" || p.t === "audio") {
+    const files = media.filter((m) => (p.t === "audio" ? m.kind === "audio" : m.kind === "image"));
+    return `<label>${p.l}<select ${at} data-pick="${p.t}"><option value="">— ninguno —</option>${files.map((m) => `<option value="${esc(m.name)}" ${v === m.name ? "selected" : ""}>${esc(m.name)}</option>`).join("")}<option value="__upload">Subir archivo…</option></select></label>`;
+  }
+  if (p.t === "color") return `<label>${p.l}<input type="color" ${at} value="${esc(v)}"></label>`;
+  return `<label>${p.l}<input type="${p.t === "number" ? "number" : "text"}" step="any" ${at} value="${esc(v)}"></label>`;
+}
 function renderOverlays() {
   if (overlaysDrawn) return;
   overlaysDrawn = true;
-  $("overlays").innerHTML = OVERLAYS.map(([name, path]) => `<div class="card ov"><h2>${name}</h2>
+  $("overlays").innerHTML = OVERLAYS.map((o) => { const path = ovUrl(o); return `<div class="card ov" id="ov_${o.id}"><div><h2>${o.name}</h2><p class="ovd">${o.desc}</p></div>
     <div class="frame"><iframe src="${path}" loading="lazy" tabindex="-1"></iframe></div>
-    <input readonly value="${location.origin}${path}" onclick="this.select()">
-    <div class="actions"><button class="btn tiny" data-copy="${location.origin}${path}">${icon("copy")}Copiar URL</button><button class="btn tiny ghost" data-open="${path}">${icon("ext")}Abrir</button></div></div>`).join("");
+    <input readonly class="url" value="${location.origin}${path}" onclick="this.select()">
+    <div class="actions"><button class="btn tiny" data-act="copy">${icon("copy")}Copiar</button>${o.test ? `<button class="btn tiny ghost" data-act="test">${icon("zap")}Probar</button>` : ""}
+      <button class="btn tiny ghost" data-act="edit">${icon("cog")}Personalizar</button><button class="btn tiny ghost icon" data-act="open" title="Abrir">${icon("ext")}</button></div>
+    <div class="ovform" hidden>${ovParams(o).map((p) => ovField(o, p)).join("")}<button class="btn tiny ghost danger" data-act="reset">Restablecer</button></div></div>`; }).join("");
 }
-$("overlays").addEventListener("click", (e) => {
-  const b = e.target.closest("button");
+function ovRefresh(o) {
+  const card = $("ov_" + o.id), path = ovUrl(o);
+  card.querySelector(".url").value = location.origin + path;
+  clearTimeout(card._t);
+  card._t = setTimeout(() => { card.querySelector("iframe").src = path; }, 450);
+}
+function redrawOverlays(keepOpen) {
+  if (!overlaysDrawn) return;
+  const open = [...document.querySelectorAll(".ovform:not([hidden])")].map((f) => f.parentElement.id.slice(3));
+  if (keepOpen && !open.includes(keepOpen)) open.push(keepOpen);
+  overlaysDrawn = false; renderOverlays();
+  open.forEach((id) => { $("ov_" + id).querySelector(".ovform").hidden = false; });
+}
+let ovPickTarget = null;
+$("overlays").addEventListener("input", (e) => {
+  const el = e.target, o = ovDef(el.dataset.ov);
+  if (!o) return;
+  if (el.value === "__upload") { ovPickTarget = { ov: o.id, k: el.dataset.k }; el.value = ""; $("ovFile").accept = el.dataset.pick === "audio" ? "audio/*" : "image/*"; $("ovFile").click(); return; }
+  (ovValues[o.id] = ovValues[o.id] || {})[el.dataset.k] = el.type === "checkbox" ? el.checked : el.value;
+  ovStore(); ovRefresh(o);
+});
+$("ovFile").addEventListener("change", async (e) => {
+  const file = e.target.files[0], target = ovPickTarget;
+  e.target.value = "";
+  if (!file || !target) return;
+  const saved = await upload([file]);
+  if (saved && saved[0]) { (ovValues[target.ov] = ovValues[target.ov] || {})[target.k] = saved[0]; ovStore(); redrawOverlays(target.ov); }
+});
+$("overlays").addEventListener("click", async (e) => {
+  const b = e.target.closest("button[data-act]");
   if (!b) return;
-  if (b.dataset.copy) { navigator.clipboard.writeText(b.dataset.copy); toast("URL copiada"); }
-  if (b.dataset.open) window.open(b.dataset.open, "_blank");
+  const card = b.closest(".ov"), o = ovDef(card.id.slice(3)), act = b.dataset.act;
+  if (act === "copy") { navigator.clipboard.writeText(location.origin + ovUrl(o)); toast("URL copiada"); }
+  else if (act === "open") window.open(ovUrl(o), "_blank");
+  else if (act === "edit") card.querySelector(".ovform").hidden = !card.querySelector(".ovform").hidden;
+  else if (act === "reset") { delete ovValues[o.id]; ovStore(); redrawOverlays(o.id); }
+  else if (act === "test") {
+    if (o.test === "tts") return api("POST", "/api/tts/test", { text: "Así se ven los subtítulos de la voz." });
+    const type = o.test === "$type" ? ovGet(o, ovParams(o).find((p) => p.k === "type")) : o.test;
+    const match = (ovValues[o.id] || {}).match || "";
+    await api("POST", "/api/simulate", { type, user: "Prueba", gift: match || "Rosa", count: type === "like" ? 30 : 1, value: type === "gift" ? 150 : 0, text: (match ? match + " " : "") + "hola desde la prueba" });
+  }
 });
 
 // ---- reglas -------------------------------------------------------------
@@ -316,6 +427,7 @@ async function loadMedia() {
       <div class="inf"><b title="${esc(m.name)}">${esc(m.name)}</b><small>${(m.size / 1048576).toFixed(1)} MB</small></div></div>`;
   }).join("") || '<div class="empty">Aún no hay archivos.</div>';
   renderRules();
+  redrawOverlays();
 }
 $("media").addEventListener("click", async (e) => {
   const b = e.target.closest("button");
@@ -331,7 +443,9 @@ async function upload(files) {
   const res = await fetch("/api/media", { method: "POST", body: form });
   if (!res.ok) return toast("Error: " + (await res.text()).slice(0, 140), true);
   toast("Archivos subidos");
-  loadMedia();
+  const saved = (await res.json()).saved;
+  await loadMedia();
+  return saved;
 }
 $("mediaFile").addEventListener("change", (e) => { upload(e.target.files); e.target.value = ""; });
 const drop = $("drop");
