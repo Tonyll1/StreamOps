@@ -180,6 +180,11 @@ CATALOG.update({
     "giorno": ("rvc", [HF + "/coconutfarm/GiornoRVCv2rmvpe/resolve/main/Giorno.zip"], BASE_M, 0),
     "raiden-shogun": ("rvc", [HF + "/Kamsaka/Raiden_Shogun/resolve/main/Raiden_Shogun.zip"], BASE_F, 0),
     "hinata": ("rvc", [HF + "/lucasgamer469/hinata_rvc/resolve/main/hinata_RVC.zip"], BASE_F, 0),
+    "makima": ("rvc", [HF + "/gorogorogorochan/MakimaRVC/resolve/main/MakimaVocal.zip"], BASE_F, 0),
+    "zundamon": ("rvc", [HF + "/zunzunpj/zundamon_RVC/resolve/main/zumdaon_rvc_indices_weights/train-0814-2.pth", HF + "/zunzunpj/zundamon_RVC/resolve/main/zumdaon_rvc_indices_weights/train-0814-2_IVF256_Flat_nprobe_1_train-0814-2_v2.index"], BASE_F, 0),
+    "vegeta-jp": ("rvc", [HF + "/binant/DBZ_Vegeta_-_RVC/resolve/main/model.pth", HF + "/binant/DBZ_Vegeta_-_RVC/resolve/main/model.index"], BASE_M, 0),
+    "deku": ("rvc", [HF + "/legitdark/JP-Izuku-Midoriya-By-Dan/resolve/main/JP-Izuku-Midoriya-By-Dan.zip"], BASE_F, 0),
+    "naruto-jp": ("rvc", [HF + "/binant/NarutoUzumaki/resolve/main/model.pth", HF + "/binant/NarutoUzumaki/resolve/main/model.index"], BASE_F, 0),
 })
 
 
@@ -228,9 +233,9 @@ def install_rvc(name: str, urls: list[str], base: str, pitch: int) -> None:
         print(f"  {name}: ya instalada")
         return
     tune = tuning(name)
-    for needed in {base, tune["piper"] if tune else base}:
-        if needed in CATALOG:
-            install_piper(needed, CATALOG[needed][1])
+    needed = tune["piper"] if tune and tune["piper"] in CATALOG else base  # la voz base que de verdad usará
+    if needed in CATALOG:
+        install_piper(needed, CATALOG[needed][1])
     has_index = False
     for url in urls:
         print(f"  {name}: descargando {url.rsplit('/', 1)[-1]}")
@@ -255,14 +260,14 @@ def install_rvc(name: str, urls: list[str], base: str, pitch: int) -> None:
             has_index = True
         else:
             raise RuntimeError(f"extensión no reconocida: {url}")
-    spec = {"piper": base, "rvc": {"model": f"{name}.pth", "pitch": pitch}}
+    spec = {"piper": needed, "rvc": {"model": f"{name}.pth", "pitch": pitch}}
     # Afinación medida (tools/afinar_voces.py): voz base, tono y velocidad de cada personaje.
     if tune and (VOICES / f"{tune['piper']}.onnx").is_file():
         spec["piper"], spec["length_scale"], spec["rvc"]["pitch"] = tune["piper"], tune["length_scale"], tune["pitch"]
     if has_index:
         spec["rvc"]["index"] = f"{name}.index"
     spec_file.write_text(json.dumps(spec, indent=2), encoding="utf-8")
-    print(f"  {name}: lista (base {base}, tono {pitch:+d})")
+    print(f"  {name}: lista (base {spec['piper']}, tono {spec['rvc']['pitch']:+d})")
 
 
 def installed(name: str) -> bool:

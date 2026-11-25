@@ -51,7 +51,14 @@ def main() -> None:
     print(f"\n  StreamOps listo en {url}\n")
     if browser:
         webbrowser.open(url)
-    web.run_app(build_web_app(app), host=host, port=port, print=None)
+    try:
+        web.run_app(build_web_app(app), host=host, port=port, print=None)
+    finally:
+        if FROZEN:
+            # Las bibliotecas de voz dejan hilos vivos que impedirían que el programa termine.
+            logging.shutdown()
+            sys.stdout.flush()
+            os._exit(0)
 
 
 if __name__ == "__main__":

@@ -8,7 +8,9 @@ import random
 import time
 import copy
 import logging
+import os
 import re
+import threading
 
 from aiohttp import web
 
@@ -283,6 +285,10 @@ def build_web_app(app: App) -> web.Application:
             raise web.GracefulExit()
 
         asyncio.get_running_loop().call_later(0.4, leave)
+        # Si el cierre ordenado se atasca (audio, atajos o bibliotecas de voz), se termina igual.
+        killer = threading.Timer(3.0, os._exit, [0])
+        killer.daemon = True
+        killer.start()
         return web.json_response({"ok": True})
 
     @web.middleware

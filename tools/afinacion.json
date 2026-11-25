@@ -83,6 +83,12 @@
   "piper": "es_MX-laura-high",
   "pitch": -8
  },
+ "deku": {
+  "error": 0.081,
+  "length_scale": 0.952,
+  "piper": "es_MX-laura-high",
+  "pitch": 2
+ },
  "don-cangrejo": {
   "error": 0.525,
   "length_scale": 1.0,
@@ -275,6 +281,12 @@
   "piper": "es_MX-laura-high",
   "pitch": -13
  },
+ "makima": {
+  "error": 0.106,
+  "length_scale": 1.053,
+  "piper": "es_MX-laura-high",
+  "pitch": 1
+ },
  "mario": {
   "error": 0.112,
   "length_scale": 0.952,
@@ -340,6 +352,12 @@
   "length_scale": 0.952,
   "piper": "es_MX-laura-high",
   "pitch": 2
+ },
+ "naruto-jp": {
+  "error": 0.056,
+  "length_scale": 0.952,
+  "piper": "es_MX-laura-high",
+  "pitch": 4
  },
  "nezuko": {
   "error": 0.076,
@@ -514,6 +532,12 @@
   "piper": "es_MX-laura-high",
   "pitch": -7
  },
+ "vegeta-jp": {
+  "error": 0.275,
+  "length_scale": 1.0,
+  "piper": "es_MX-laura-high",
+  "pitch": -7
+ },
  "wario": {
   "error": 0.517,
   "length_scale": 1.0,
@@ -543,5 +567,11 @@
   "length_scale": 1.0,
   "piper": "es_MX-laura-high",
   "pitch": 3
+ },
+ "zundamon": {
+  "error": 0.148,
+  "length_scale": 0.952,
+  "piper": "es_MX-laura-high",
+  "pitch": 8
  }
 }
