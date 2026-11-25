@@ -10,6 +10,7 @@ from collections import deque
 import aiohttp
 from aiohttp import web
 
+from .descargas import Downloads
 from .reader import Reader
 from .audio import Mixer
 from .bus import Event, EventBus
@@ -37,6 +38,7 @@ class App:
         self.mixer = Mixer(self.config["audio"].get("device", ""))
         self.tts = TTS(self)
         self.reader = Reader(self)
+        self.downloads = Downloads(self)
         self.rules = RuleEngine(self)
         self.hotkeys = Hotkeys()
         self.connectors = {
@@ -65,6 +67,7 @@ class App:
         if self.config["heartrate"]["source"] != "off":
             self.connectors["heartrate"].start()
         self.spawn(self._state_loop())
+        self.downloads.first_run()
 
     async def stop(self) -> None:
         self.hotkeys.stop()

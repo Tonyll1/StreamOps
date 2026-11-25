@@ -1,6 +1,6 @@
 """Conversión de voz RVC (opcional): convierte el habla de Piper al timbre de un personaje.
 
-Requiere la instalación extra de tools/instalar_rvc.bat (PyTorch + infer_rvc_python).
+Requiere el motor de personajes (ver engine.py): PyTorch + infer_rvc_python.
 Los modelos (.pth y, si existe, .index) van en data/voices/rvc/.
 """
 
@@ -11,6 +11,7 @@ from collections import OrderedDict
 
 import numpy as np
 
+from . import engine
 from .config import VOICES
 
 logger = logging.getLogger(__name__)
@@ -21,6 +22,7 @@ MAX_LOADED = 8  # personajes que se mantienen cargados a la vez
 
 class RvcConverter:
     def __init__(self) -> None:
+        engine.activate()
         import torch
         from infer_rvc_python import BaseLoader
 

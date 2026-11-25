@@ -142,6 +142,12 @@ input[type=range]::-webkit-slider-thumb:hover { transform:scale(1.15); }
 .vfilter button { padding:4px 12px; border-radius:6px; border:0; background:transparent; color:var(--dim); font:500 12px/1.5 inherit; font-family:inherit; cursor:pointer; transition:background var(--fast), color var(--fast); }
 .vfilter button small { color:var(--mute); margin-left:2px; }
 .vfilter button:hover { color:var(--text); } .vfilter button.on { background:var(--hover); color:var(--text); }
+.catlist { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:6px; max-height:340px; overflow-y:auto; padding-right:4px; contain:content; }
+.cat { display:flex; align-items:center; gap:8px; padding:6px 9px; border-radius:7px; border:1px solid var(--line); background:var(--bg); font-size:13px; }
+.cat .n { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .cat .n small { display:block; color:var(--mute); font-size:11px; overflow:hidden; text-overflow:ellipsis; }
+.cat.ok { border-color:var(--line2); } .cat.err .n small { color:var(--danger,#e5484d); } .cat.busy .n small { color:var(--accent); }
+.engine { display:flex; align-items:center; gap:12px; padding:10px 12px; margin-bottom:10px; border-radius:8px; border:1px solid var(--accent); background:var(--accent-soft); font-size:13px; } .engine p { flex:1; margin:0; } .engine small { display:block; color:var(--dim); }
+.quit { margin:10px 12px 0; }
 .voices { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:6px; max-height:430px; overflow-y:auto; padding-right:4px; contain:content; }
 .voice { display:flex; align-items:center; gap:9px; padding:7px 9px; border-radius:7px; border:1px solid var(--line); background:var(--bg); cursor:pointer; font-size:13px; transition:border-color var(--fast), background var(--fast); }
 .voice:hover { border-color:var(--line2); background:var(--raised); }
@@ -217,3 +223,4 @@ input[type=range]::-webkit-slider-thumb:hover { transform:scale(1.15); }
 @keyframes toastIn { from { opacity:0; transform:translateY(8px); } } @keyframes toastOut { to { opacity:0; transform:translateY(8px); } }
 
 @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; } }
+[hidden] { display:none !important; }

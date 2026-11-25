@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from . import engine
 from .audio import resample, to_stereo
 from .config import VOICES
 
@@ -111,6 +112,10 @@ class TTS:
         self._queue.put((text, voice))
         return True
 
+    def forget(self, name: str) -> None:
+        """Suelta una voz Piper cargada (se va a borrar su archivo)."""
+        self._piper_cache.pop(name, None)
+
     def skip(self) -> None:
         """Corta la frase que está sonando."""
         self.app.mixer.clear("tts")
@@ -183,7 +188,7 @@ class TTS:
         if not chunks:
             return None, 0
         samples = np.concatenate(chunks).astype(np.float32)
-        if spec.get("rvc"):
+        if spec.get("rvc") and engine.available():  # sin el motor suena la voz base
             try:
                 samples, rate = self._convert(samples, rate, spec["rvc"])
             except Exception:
@@ -205,7 +210,7 @@ class TTS:
             if spec is None:
                 return
             self._piper(spec["piper"])
-            if spec.get("rvc") or any(VOICES.glob("*.voice.json")):
+            if engine.available() and (spec.get("rvc") or any(VOICES.glob("*.voice.json"))):
                 silence = (np.random.default_rng(0).standard_normal(8000) * 0.01).astype(np.float32)
                 if spec.get("rvc"):
                     self._convert(silence, 16000, spec["rvc"])

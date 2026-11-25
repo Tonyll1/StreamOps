@@ -52,6 +52,7 @@
       <a data-view="pulso"><svg class="ic"><use href="#i-heart"/></svg>Pulsómetro</a>
       <a data-view="ajustes" class="sep"><svg class="ic"><use href="#i-cog"/></svg>Ajustes</a>
     </nav>
+    <button class="btn ghost danger quit" id="btnQuit" hidden>Cerrar StreamOps</button>
     <div class="side-status">
       <div class="cap">Estado</div>
       <div class="srow"><span class="pchip tiktok">TT</span>TikTok<i class="dot" id="dot_tiktok"></i></div>
@@ -175,6 +176,15 @@
                 </div>
                 <p class="hint">Tono: súbelo si suena demasiado grave para el personaje, bájalo si suena chillón. Voz base: prueba la femenina para personajes agudos y la masculina para graves.</p>
               </div>
+            </div>
+            <div class="card">
+              <div class="card-h"><h2>Catálogo de voces <small id="catCount"></small></h2>
+                <div class="search"><svg class="ic"><use href="#i-search"/></svg><input id="catSearch" placeholder="Buscar en el catálogo…"></div></div>
+              <div class="engine" id="engineBox" hidden></div>
+              <div class="bar" style="margin-bottom:8px"><div class="vfilter" id="catFilter" style="margin:0"><button class="on" data-f="all">Todas</button><button data-f="missing">Sin instalar</button><button data-f="installed">Instaladas</button><button data-f="rvc">Personajes</button><button data-f="piper">Naturales</button></div>
+                <button class="btn tiny" id="catAll">Descargar las que se ven</button></div>
+              <div id="catList" class="catlist"></div>
+              <p class="hint" id="catHint"></p>
             </div>
             <div class="card">
               <div class="card-h"><h2>Qué se lee <small>frase, mínimo y voz por tipo de evento</small></h2></div>

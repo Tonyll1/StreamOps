@@ -14,7 +14,9 @@ from aiohttp import web
 
 from .app import App
 from .bus import Event
-from .config import VOICES, MEDIA, WEB
+from . import engine, voces
+from .config import DATA, FROZEN, VOICES, MEDIA, WEB
+from .descargas import ENGINE_JOB
 from .connectors.heartrate import scan_ble
 from .rules import media_kind
 
@@ -242,6 +244,46 @@ def build_web_app(app: App) -> web.Application:
             return web.json_response(await asyncio.wait_for(scan_ble(), timeout=15))
         except Exception as exc:
             return web.json_response({"error": str(exc) or type(exc).__name__}, status=500)
+
+    # ---- catálogo de voces y motor de personajes ---------------------------
+    @routes.get("/api/catalog")
+    async def catalog(_request: web.Request) -> web.Response:
+        data = await asyncio.to_thread(app.downloads.catalog)
+        return web.json_response({**data, "app": {"frozen": FROZEN, "data": str(DATA)}})
+
+    @routes.post("/api/catalog/install")
+    async def catalog_install(request: web.Request) -> web.Response:
+        names = [str(n) for n in (await request.json()).get("names", [])][:400]
+        app.downloads.request(names)
+        return web.json_response({"ok": True})
+
+    @routes.delete("/api/catalog/{name}")
+    async def catalog_delete(request: web.Request) -> web.Response:
+        name = request.match_info["name"]
+        if name not in voces.CATALOG:
+            raise web.HTTPNotFound()
+        users = voces.used_by(name)
+        if users:
+            raise web.HTTPConflict(text="La usan como voz base: " + ", ".join(users[:6]) + ("…" if len(users) > 6 else ""))
+        app.tts.forget(name)
+        voces.remove(name)
+        await app.broadcast({"type": "catalog"})
+        return web.json_response({"ok": True})
+
+    @routes.post("/api/engine/install")
+    async def engine_install(_request: web.Request) -> web.Response:
+        if not FROZEN:
+            raise web.HTTPBadRequest(text="Desde el código fuente el motor se instala con tools\\instalar_rvc.bat")
+        app.downloads.request([ENGINE_JOB])
+        return web.json_response({"ok": True})
+
+    @routes.post("/api/quit")
+    async def quit_app(_request: web.Request) -> web.Response:
+        def leave() -> None:
+            raise web.GracefulExit()
+
+        asyncio.get_running_loop().call_later(0.4, leave)
+        return web.json_response({"ok": True})
 
     @web.middleware
     async def local_only(request: web.Request, handler):

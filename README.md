@@ -4,11 +4,20 @@ Bot local de streaming para **TikTok, Twitch y Kick**: voz (TTS) con voces de pe
 
 ## Uso
 
+**Con el ejecutable (sin instalar nada):** descarga `StreamOps.exe` de [Releases](https://github.com/Tonyll1/StreamOps/releases) y ábrelo. Se abre el panel en <http://127.0.0.1:8765/>.
+
+- No tiene ventana propia: sigue funcionando al cerrar el navegador (los overlays lo necesitan). Para cerrarlo usa **Cerrar StreamOps** en el panel; al abrirlo otra vez solo muestra el panel.
+- Guarda todo en la carpeta `StreamOps-datos`, junto al `.exe`.
+- La primera vez descarga una voz en español. Las demás se bajan en **Voz > Catálogo de voces**.
+- Las voces de personaje necesitan el **motor de voces** (botón en el mismo catálogo; unos 2.8 GB con tarjeta NVIDIA, 0.5 GB sin ella).
+
+**Desde el código fuente** (requiere Python 3.11):
+
 ```bat
 run.bat
 ```
 
-Abre el panel en <http://127.0.0.1:8765/>. La primera vez crea el entorno e instala dependencias (requiere Python 3.11).
+Para generar el ejecutable: `.venv\Scripts\python.exe tools\build_exe.py` y `tools\publicar.py v1.0.0` para subirlo a Releases.
 
 ## Qué incluye
 

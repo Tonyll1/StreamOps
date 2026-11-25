@@ -236,6 +236,8 @@ StreamOps.connect((msg) => {
   } else if (msg.type === "status") setStatus(msg.connectors);
   else if (msg.type === "mute") setMuted(msg.muted);
   else if (msg.type === "hr") setBpm(msg.bpm);
+  else if (msg.type === "catalog") loadCatalog(true);
+  else if (msg.type === "download") catProgress(msg.name, msg.text);
   else if (msg.type === "event") addEvent(msg.event);
   else if (msg.type === "history" && msg.events.length) { $("feed").innerHTML = ""; feedEmpty = false; msg.events.forEach(addEvent); }
 });
@@ -248,7 +250,7 @@ function renderVoices() {
   $("voiceGrid").innerHTML = list.map((v, i) => `<div class="voice ${v.kind} ${v.name === config.tts.voice ? "sel" : ""}" data-voice="${esc(v.name)}" title="${esc(v.name)}">
     <span class="va">${esc(v.name.replace(/^es_[A-Z]{2}-/, "").slice(0, 2))}</span><span>${esc(v.name.replace(/^es_([A-Z]{2})-(.*?)-(?:x_low|low|medium|high)$/, "$2 ($1)"))}</span>
     ${v.kind === "rvc" ? '<svg class="star" viewBox="0 0 24 24"><use href="#i-star"/></svg>' : ""}<button class="play" data-play="${esc(v.name)}" title="Escuchar">${icon("play")}</button></div>`).join("")
-    || '<div class="empty">Ninguna voz coincide. Instala más con tools\\voces.py</div>';
+    || '<div class="empty">Ninguna voz coincide. Descarga más en el catálogo de abajo.</div>';
 }
 $("voiceSearch").addEventListener("input", renderVoices);
 $("voiceFilter").addEventListener("click", (e) => {
@@ -257,6 +259,67 @@ $("voiceFilter").addEventListener("click", (e) => {
   $("voiceFilter").querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === e.target));
   renderVoices();
 });
+// ---- catálogo de voces (descargar / borrar) ---------------------------------
+let catalog = { voices: [], engine: {}, app: {} }, catFilter = "all";
+const ENGINE_JOB = "__motor__";
+function catVisible() {
+  const q = $("catSearch").value.trim().toLowerCase();
+  return catalog.voices.filter((v) => v.name.toLowerCase().includes(q) && (catFilter === "all" || (catFilter === "missing" ? !v.installed : catFilter === "installed" ? v.installed : v.kind === catFilter)));
+}
+function renderCatalog() {
+  const en = catalog.engine, job = en.job, hasRvc = catalog.voices.some((v) => v.kind === "rvc" && v.installed);
+  $("btnQuit").hidden = !catalog.app.frozen;
+  $("engineBox").hidden = en.installed || !catalog.app.frozen;
+  $("engineBox").innerHTML = `<p><b>Las voces de personaje necesitan el motor de voces</b><small id="cat_${ENGINE_JOB}">${esc(job ? job.text : `Descarga única, ${en.size}. ${en.note || ""}${hasRvc ? " Mientras tanto suenan con su voz base." : ""}`)}</small></p>
+    <button class="btn primary" id="engineGet" ${job && job.status !== "error" ? "disabled" : ""}>${job && job.status === "error" ? "Reintentar" : job ? "Instalando…" : "Instalar motor"}</button>`;
+  const done = catalog.voices.filter((v) => v.installed).length;
+  $("catCount").textContent = `${done} de ${catalog.voices.length} instaladas`;
+  $("catHint").textContent = catalog.app.data ? "Las voces se guardan en " + catalog.app.data + "\\voices" : "";
+  $("catList").innerHTML = catVisible().map((v) => {
+    const job = v.job, busy = job && job.status !== "error";
+    const sub = job ? job.text : (v.kind === "rvc" ? "Personaje" : "Natural") + (v.installed ? " · instalada" : "");
+    const button = busy ? "" : v.installed ? `<button class="btn tiny ghost danger" data-del="${esc(v.name)}">Borrar</button>` : `<button class="btn tiny" data-get="${esc(v.name)}">${job ? "Reintentar" : "Descargar"}</button>`;
+    return `<div class="cat ${v.installed ? "ok" : ""} ${busy ? "busy" : job ? "err" : ""}"><span class="n" title="${esc(v.name)}">${esc(v.name)}<small id="cat_${esc(v.name)}">${esc(sub)}</small></span>${button}</div>`;
+  }).join("") || '<div class="empty">Ninguna voz coincide.</div>';
+}
+function catProgress(name, text) {
+  const el = $("cat_" + name);
+  if (el) el.textContent = text; else if (!catalog.voices.length) loadCatalog();
+}
+let catTimer = 0;
+async function loadCatalog(refreshVoices) {
+  clearTimeout(catTimer);
+  catTimer = setTimeout(async () => {
+    catalog = await api("GET", "/api/catalog");
+    renderCatalog();
+    if (refreshVoices) { voices = await api("GET", "/api/voices"); renderVoices(); }
+  }, 150);
+}
+$("catSearch").addEventListener("input", renderCatalog);
+$("catFilter").addEventListener("click", (e) => {
+  if (!e.target.dataset.f) return;
+  catFilter = e.target.dataset.f;
+  $("catFilter").querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === e.target));
+  renderCatalog();
+});
+$("catList").addEventListener("click", async (e) => {
+  const get = e.target.closest("[data-get]"), del = e.target.closest("[data-del]");
+  if (get) await api("POST", "/api/catalog/install", { names: [get.dataset.get] });
+  else if (del && confirm(`¿Borrar la voz ${del.dataset.del}? Podrás descargarla de nuevo.`)) await api("DELETE", "/api/catalog/" + encodeURIComponent(del.dataset.del));
+});
+$("catAll").addEventListener("click", async () => {
+  const names = catVisible().filter((v) => !v.installed && !v.job).map((v) => v.name);
+  if (!names.length) return toast("No hay nada pendiente en esta lista");
+  if (confirm(`¿Descargar ${names.length} voces? Puede ocupar varios GB.`)) await api("POST", "/api/catalog/install", { names });
+});
+$("engineBox").addEventListener("click", async (e) => { if (e.target.id === "engineGet") await api("POST", "/api/engine/install"); });
+$("btnQuit").addEventListener("click", async () => {
+  if (!confirm("¿Cerrar StreamOps? Los overlays dejarán de funcionar hasta que lo abras de nuevo.")) return;
+  await api("POST", "/api/quit");
+  document.body.innerHTML = '<div class="empty" style="padding:80px">StreamOps se cerró. Ya puedes cerrar esta pestaña.</div>';
+});
+loadCatalog();
+
 // ---- afinador de voces de personaje ----------------------------------------
 let tuneVoice = "";
 function showTune() {

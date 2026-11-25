@@ -4,14 +4,35 @@ from __future__ import annotations
 
 import copy
 import json
+import os
+import sys
 import threading
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-DATA = ROOT / "data"
+FROZEN = bool(getattr(sys, "frozen", False))  # True dentro de StreamOps.exe
+# BUNDLE: archivos de solo lectura que vienen con la app (panel, overlays, afinación).
+BUNDLE = Path(getattr(sys, "_MEIPASS", "")) if FROZEN else Path(__file__).resolve().parent.parent
+
+
+def _data_dir() -> Path:
+    """Carpeta de datos: junto al programa; si no se puede escribir ahí, en AppData."""
+    if not FROZEN:
+        return BUNDLE / "data"
+    beside = Path(sys.executable).resolve().parent / "StreamOps-datos"
+    try:
+        beside.mkdir(parents=True, exist_ok=True)
+        probe = beside / ".escritura"
+        probe.write_text("", encoding="utf-8")
+        probe.unlink()
+        return beside
+    except OSError:
+        return Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "StreamOps"
+
+
+DATA = _data_dir()
 MEDIA = DATA / "media"
 VOICES = DATA / "voices"
-WEB = ROOT / "web"
+WEB = BUNDLE / "web"
 CONFIG_FILE = DATA / "config.json"
 
 DEFAULTS: dict = {
