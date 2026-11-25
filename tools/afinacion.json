@@ -1,307 +1,547 @@
 {
- "arenita": {
-  "length_scale": 0.971,
+ "aizen": {
+  "error": 0.113,
+  "length_scale": 1.075,
   "piper": "es_MX-claude-high",
+  "pitch": -10
+ },
+ "anya": {
+  "error": 0.099,
+  "length_scale": 1.0,
+  "piper": "es_MX-laura-high",
+  "pitch": 9
+ },
+ "arenita": {
+  "error": 0.08,
+  "length_scale": 0.971,
+  "piper": "es_MX-laura-high",
+  "pitch": 3
+ },
+ "asuka": {
+  "error": 0.047,
+  "length_scale": 0.952,
+  "piper": "es_MX-laura-high",
   "pitch": 4
  },
  "bart": {
+  "error": 0.095,
   "length_scale": 0.952,
-  "piper": "es_MX-claude-high",
-  "pitch": 5
+  "piper": "es_MX-laura-high",
+  "pitch": 4
  },
  "bob-esponja": {
+  "error": 0.084,
   "length_scale": 0.943,
-  "piper": "es_MX-claude-high",
-  "pitch": 5
+  "piper": "es_MX-laura-high",
+  "pitch": 4
  },
  "burro": {
+  "error": 0.129,
   "length_scale": 0.909,
-  "piper": "es_MX-claude-high",
+  "piper": "es_MX-laura-high",
   "pitch": -1
  },
  "buzz": {
+  "error": 0.095,
   "length_scale": 1.031,
-  "piper": "es_MX-ald-medium",
-  "pitch": -4
+  "piper": "es_MX-laura-high",
+  "pitch": -10
  },
  "calamardo": {
+  "error": 0.114,
   "length_scale": 1.031,
-  "piper": "es_MX-ald-medium",
-  "pitch": 1
+  "piper": "es_MX-laura-high",
+  "pitch": -5
  },
  "cartman": {
-  "length_scale": 1.0,
-  "piper": "es_MX-ald-medium",
-  "pitch": 7
- },
- "chavo": {
+  "error": 0.804,
   "length_scale": 1.0,
   "piper": "es_MX-claude-high",
+  "pitch": 4
+ },
+ "chavo": {
+  "error": 0.093,
+  "length_scale": 1.0,
+  "piper": "es_MX-laura-high",
   "pitch": 1
  },
  "crash": {
+  "error": 0.148,
   "length_scale": 0.952,
-  "piper": "es_MX-claude-high",
-  "pitch": -1
+  "piper": "es_MX-laura-high",
+  "pitch": -2
  },
  "darth-vader": {
+  "error": 0.191,
   "length_scale": 1.149,
-  "piper": "es_MX-ald-medium",
-  "pitch": -9
+  "piper": "es_MX-laura-high",
+  "pitch": -15
  },
  "deadpool": {
+  "error": 0.047,
   "length_scale": 0.926,
-  "piper": "es_MX-ald-medium",
-  "pitch": -2
+  "piper": "es_MX-laura-high",
+  "pitch": -8
  },
  "don-cangrejo": {
+  "error": 0.525,
   "length_scale": 1.0,
   "piper": "es_MX-ald-medium",
-  "pitch": 3
+  "pitch": 1
  },
  "don-ramon": {
+  "error": 0.222,
   "length_scale": 0.971,
-  "piper": "es_MX-ald-medium",
-  "pitch": 1
+  "piper": "es_MX-claude-high",
+  "pitch": -5
  },
  "doraemon": {
+  "error": 0.122,
   "length_scale": 1.0,
-  "piper": "es_MX-claude-high",
-  "pitch": 7
+  "piper": "es_MX-laura-high",
+  "pitch": 6
  },
  "dross": {
+  "error": 0.402,
   "length_scale": 1.031,
   "piper": "es_MX-ald-medium",
-  "pitch": -5
+  "pitch": -6
  },
  "duende-verde": {
+  "error": 0.89,
   "length_scale": 1.0,
-  "piper": "es_MX-claude-high",
+  "piper": "es_MX-laura-high",
   "pitch": -6
+ },
+ "frieren": {
+  "error": 0.052,
+  "length_scale": 1.075,
+  "piper": "es_MX-laura-high",
+  "pitch": 2
+ },
+ "geto": {
+  "error": 0.139,
+  "length_scale": 1.031,
+  "piper": "es_MX-laura-high",
+  "pitch": -10
+ },
+ "giorno": {
+  "error": 0.105,
+  "length_scale": 1.0,
+  "piper": "es_MX-laura-high",
+  "pitch": -7
  },
  "glados": {
+  "error": 0.048,
   "length_scale": 1.053,
-  "piper": "es_MX-claude-high",
+  "piper": "es_MX-laura-high",
   "pitch": 1
  },
- "goku": {
+ "gojo": {
+  "error": 0.134,
   "length_scale": 1.0,
-  "piper": "es_MX-ald-medium",
-  "pitch": 1
- },
- "gru": {
-  "length_scale": 1.031,
-  "piper": "es_MX-ald-medium",
-  "pitch": -2
- },
- "harley-quinn": {
-  "length_scale": 0.952,
-  "piper": "es_MX-claude-high",
-  "pitch": 4
- },
- "homero": {
-  "length_scale": 1.031,
-  "piper": "es_MX-ald-medium",
-  "pitch": -1
- },
- "jirafales": {
-  "length_scale": 1.053,
-  "piper": "es_MX-ald-medium",
-  "pitch": -4
- },
- "kermit": {
-  "length_scale": 1.0,
-  "piper": "es_MX-claude-high",
-  "pitch": 0
- },
- "kratos": {
-  "length_scale": 1.111,
-  "piper": "es_MX-ald-medium",
+  "piper": "es_MX-laura-high",
   "pitch": -8
  },
- "len": {
+ "goku": {
+  "error": 0.145,
   "length_scale": 1.0,
-  "piper": "es_MX-claude-high",
-  "pitch": 5
+  "piper": "es_MX-laura-high",
+  "pitch": -5
  },
- "lisa": {
-  "length_scale": 0.971,
-  "piper": "es_MX-claude-high",
+ "goku-jp": {
+  "error": 0.083,
+  "length_scale": 0.952,
+  "piper": "es_MX-laura-high",
   "pitch": 6
  },
- "loquendo-jorge": {
-  "length_scale": 1.0,
-  "piper": "es_MX-ald-medium",
-  "pitch": -4
- },
- "loquendo-juan": {
-  "length_scale": 1.0,
+ "gru": {
+  "error": 0.406,
+  "length_scale": 1.031,
   "piper": "es_MX-ald-medium",
   "pitch": -3
  },
- "luigi": {
-  "length_scale": 0.971,
-  "piper": "es_MX-claude-high",
-  "pitch": 1
- },
- "luka": {
-  "length_scale": 1.031,
-  "piper": "es_MX-claude-high",
-  "pitch": 2
- },
- "mario": {
+ "harley-quinn": {
+  "error": 0.077,
   "length_scale": 0.952,
-  "piper": "es_MX-claude-high",
+  "piper": "es_MX-laura-high",
+  "pitch": 3
+ },
+ "hinata": {
+  "error": 0.006,
+  "length_scale": 1.031,
+  "piper": "es_MX-laura-high",
+  "pitch": 3
+ },
+ "homero": {
+  "error": 0.12,
+  "length_scale": 1.031,
+  "piper": "es_MX-laura-high",
+  "pitch": -7
+ },
+ "itadori": {
+  "error": 0.142,
+  "length_scale": 0.952,
+  "piper": "es_MX-laura-high",
+  "pitch": -5
+ },
+ "jirafales": {
+  "error": 0.095,
+  "length_scale": 1.053,
+  "piper": "es_MX-laura-high",
+  "pitch": -10
+ },
+ "jotaro": {
+  "error": 0.119,
+  "length_scale": 1.053,
+  "piper": "es_MX-laura-high",
+  "pitch": -12
+ },
+ "kermit": {
+  "error": 0.145,
+  "length_scale": 1.0,
+  "piper": "es_MX-laura-high",
+  "pitch": -1
+ },
+ "killua": {
+  "error": 0.08,
+  "length_scale": 0.971,
+  "piper": "es_MX-laura-high",
+  "pitch": 3
+ },
+ "kratos": {
+  "error": 0.253,
+  "length_scale": 1.111,
+  "piper": "es_MX-laura-high",
+  "pitch": -14
+ },
+ "len": {
+  "error": 0.099,
+  "length_scale": 1.0,
+  "piper": "es_MX-laura-high",
   "pitch": 4
  },
+ "levi": {
+  "error": 0.089,
+  "length_scale": 1.031,
+  "piper": "es_MX-laura-high",
+  "pitch": -10
+ },
+ "light-yagami": {
+  "error": 0.11,
+  "length_scale": 1.0,
+  "piper": "es_MX-laura-high",
+  "pitch": -7
+ },
+ "lisa": {
+  "error": 0.062,
+  "length_scale": 0.971,
+  "piper": "es_MX-laura-high",
+  "pitch": 5
+ },
+ "loquendo-jorge": {
+  "error": 0.058,
+  "length_scale": 1.0,
+  "piper": "es_MX-laura-high",
+  "pitch": -10
+ },
+ "loquendo-juan": {
+  "error": 0.157,
+  "length_scale": 1.0,
+  "piper": "es_MX-laura-high",
+  "pitch": -9
+ },
+ "luffy": {
+  "error": 0.212,
+  "length_scale": 0.926,
+  "piper": "es_MX-laura-high",
+  "pitch": 4
+ },
+ "luigi": {
+  "error": 0.105,
+  "length_scale": 0.971,
+  "piper": "es_MX-laura-high",
+  "pitch": 0
+ },
+ "luka": {
+  "error": 0.082,
+  "length_scale": 1.031,
+  "piper": "es_MX-laura-high",
+  "pitch": 1
+ },
+ "madara": {
+  "error": 0.137,
+  "length_scale": 1.087,
+  "piper": "es_MX-laura-high",
+  "pitch": -13
+ },
+ "mario": {
+  "error": 0.112,
+  "length_scale": 0.952,
+  "piper": "es_MX-laura-high",
+  "pitch": 3
+ },
  "master-chief": {
+  "error": 0.173,
   "length_scale": 1.053,
+  "piper": "es_MX-laura-high",
+  "pitch": -12
+ },
+ "megumi": {
+  "error": 0.089,
+  "length_scale": 1.031,
+  "piper": "es_MX-laura-high",
+  "pitch": -9
+ },
+ "mickey": {
+  "error": 0.064,
+  "length_scale": 1.0,
+  "piper": "es_MX-laura-high",
+  "pitch": 8
+ },
+ "miku": {
+  "error": 0.074,
+  "length_scale": 0.971,
+  "piper": "es_MX-laura-high",
+  "pitch": 7
+ },
+ "miku-jp": {
+  "error": 0.08,
+  "length_scale": 0.971,
+  "piper": "es_MX-laura-high",
+  "pitch": 7
+ },
+ "moe": {
+  "error": 0.297,
+  "length_scale": 1.0,
+  "piper": "es_MX-laura-high",
+  "pitch": -10
+ },
+ "mojo-jojo": {
+  "error": 0.326,
+  "length_scale": 1.0,
+  "piper": "es_MX-laura-high",
+  "pitch": -5
+ },
+ "morty": {
+  "error": 0.107,
+  "length_scale": 0.952,
+  "piper": "es_MX-laura-high",
+  "pitch": 0
+ },
+ "nagatoro": {
+  "error": 0.083,
+  "length_scale": 0.952,
+  "piper": "es_MX-laura-high",
+  "pitch": 4
+ },
+ "naruto": {
+  "error": 0.083,
+  "length_scale": 0.952,
+  "piper": "es_MX-laura-high",
+  "pitch": 2
+ },
+ "nezuko": {
+  "error": 0.076,
+  "length_scale": 1.0,
+  "piper": "es_MX-laura-high",
+  "pitch": 6
+ },
+ "nobara": {
+  "error": 0.112,
+  "length_scale": 0.952,
+  "piper": "es_MX-laura-high",
+  "pitch": 2
+ },
+ "oogway": {
+  "error": 0.18,
+  "length_scale": 1.205,
   "piper": "es_MX-ald-medium",
   "pitch": -6
  },
- "mickey": {
-  "length_scale": 1.0,
-  "piper": "es_MX-claude-high",
-  "pitch": 9
- },
- "miku": {
-  "length_scale": 0.971,
-  "piper": "es_MX-claude-high",
-  "pitch": 8
- },
- "miku-jp": {
-  "length_scale": 0.971,
-  "piper": "es_MX-claude-high",
-  "pitch": 8
- },
- "moe": {
-  "length_scale": 1.0,
-  "piper": "es_MX-ald-medium",
-  "pitch": -4
- },
- "mojo-jojo": {
-  "length_scale": 1.0,
-  "piper": "es_MX-ald-medium",
-  "pitch": -3
- },
- "morty": {
-  "length_scale": 0.952,
-  "piper": "es_MX-claude-high",
-  "pitch": 1
- },
- "naruto": {
-  "length_scale": 0.952,
-  "piper": "es_MX-claude-high",
-  "pitch": 3
- },
- "oogway": {
-  "length_scale": 1.205,
-  "piper": "es_MX-ald-medium",
-  "pitch": -5
- },
  "optimus": {
+  "error": 0.233,
   "length_scale": 1.136,
-  "piper": "es_MX-ald-medium",
-  "pitch": -8
+  "piper": "es_MX-laura-high",
+  "pitch": -14
  },
  "pato-donald": {
+  "error": 0.087,
   "length_scale": 1.0,
-  "piper": "es_MX-claude-high",
-  "pitch": 6
+  "piper": "es_MX-laura-high",
+  "pitch": 5
  },
  "patricio": {
+  "error": 0.115,
   "length_scale": 1.111,
-  "piper": "es_MX-ald-medium",
-  "pitch": -2
+  "piper": "es_MX-laura-high",
+  "pitch": -9
  },
  "peter-griffin": {
+  "error": 0.122,
   "length_scale": 1.0,
-  "piper": "es_MX-ald-medium",
-  "pitch": 1
+  "piper": "es_MX-laura-high",
+  "pitch": -5
  },
  "plankton": {
+  "error": 0.142,
   "length_scale": 0.971,
-  "piper": "es_MX-claude-high",
-  "pitch": -1
+  "piper": "es_MX-laura-high",
+  "pitch": -2
  },
  "po": {
+  "error": 0.099,
   "length_scale": 0.971,
-  "piper": "es_MX-ald-medium",
-  "pitch": 0
+  "piper": "es_MX-laura-high",
+  "pitch": -7
+ },
+ "raiden-shogun": {
+  "error": 0.101,
+  "length_scale": 1.053,
+  "piper": "es_MX-laura-high",
+  "pitch": 1
  },
  "ralph": {
+  "error": 0.075,
   "length_scale": 1.075,
-  "piper": "es_MX-claude-high",
-  "pitch": 6
+  "piper": "es_MX-laura-high",
+  "pitch": 5
  },
- "rey-julien": {
-  "length_scale": 0.952,
-  "piper": "es_MX-ald-medium",
+ "rei": {
+  "error": 0.121,
+  "length_scale": 1.075,
+  "piper": "es_MX-laura-high",
   "pitch": 2
  },
+ "rey-julien": {
+  "error": 0.148,
+  "length_scale": 0.952,
+  "piper": "es_MX-laura-high",
+  "pitch": -4
+ },
  "rick": {
+  "error": 0.117,
   "length_scale": 0.971,
-  "piper": "es_MX-ald-medium",
-  "pitch": -2
+  "piper": "es_MX-laura-high",
+  "pitch": -8
  },
  "rin": {
   "length_scale": 0.971,
   "piper": "es_MX-claude-high",
   "pitch": 9
  },
- "senor-barriga": {
+ "saitama": {
+  "error": 0.139,
   "length_scale": 1.031,
-  "piper": "es_MX-ald-medium",
-  "pitch": -2
+  "piper": "es_MX-laura-high",
+  "pitch": -9
+ },
+ "sasuke": {
+  "error": 0.082,
+  "length_scale": 1.031,
+  "piper": "es_MX-laura-high",
+  "pitch": -9
+ },
+ "senor-barriga": {
+  "error": 0.063,
+  "length_scale": 1.031,
+  "piper": "es_MX-laura-high",
+  "pitch": -9
  },
  "shaggy": {
+  "error": 0.086,
   "length_scale": 0.971,
-  "piper": "es_MX-claude-high",
-  "pitch": -1
+  "piper": "es_MX-laura-high",
+  "pitch": -2
  },
  "shin-chan": {
+  "error": 0.068,
   "length_scale": 0.971,
-  "piper": "es_MX-claude-high",
-  "pitch": 6
+  "piper": "es_MX-laura-high",
+  "pitch": 5
  },
  "shrek": {
+  "error": 0.063,
   "length_scale": 1.031,
-  "piper": "es_MX-ald-medium",
-  "pitch": -3
+  "piper": "es_MX-laura-high",
+  "pitch": -9
  },
  "skipper": {
+  "error": 0.173,
   "length_scale": 0.971,
-  "piper": "es_MX-ald-medium",
-  "pitch": -3
+  "piper": "es_MX-laura-high",
+  "pitch": -9
  },
  "sonic": {
+  "error": 0.077,
   "length_scale": 0.909,
-  "piper": "es_MX-claude-high",
-  "pitch": -1
+  "piper": "es_MX-laura-high",
+  "pitch": -2
+ },
+ "sukuna": {
+  "error": 0.137,
+  "length_scale": 1.053,
+  "piper": "es_MX-laura-high",
+  "pitch": -11
  },
  "teto": {
+  "error": 0.049,
   "length_scale": 0.971,
-  "piper": "es_MX-claude-high",
-  "pitch": 6
+  "piper": "es_MX-laura-high",
+  "pitch": 5
+ },
+ "teto-jp": {
+  "error": 0.093,
+  "length_scale": 0.971,
+  "piper": "es_MX-laura-high",
+  "pitch": 5
+ },
+ "todoroki": {
+  "error": 0.082,
+  "length_scale": 1.031,
+  "piper": "es_MX-laura-high",
+  "pitch": -9
+ },
+ "toji": {
+  "error": 0.108,
+  "length_scale": 1.031,
+  "piper": "es_MX-laura-high",
+  "pitch": -12
  },
  "vegeta": {
+  "error": 0.192,
   "length_scale": 1.0,
-  "piper": "es_MX-ald-medium",
-  "pitch": -1
+  "piper": "es_MX-laura-high",
+  "pitch": -7
  },
  "wario": {
+  "error": 0.517,
   "length_scale": 1.0,
-  "piper": "es_MX-ald-medium",
-  "pitch": -4
+  "piper": "es_MX-laura-high",
+  "pitch": -6
  },
  "woody": {
+  "error": 0.29,
   "length_scale": 0.971,
-  "piper": "es_MX-ald-medium",
-  "pitch": 0
+  "piper": "es_MX-laura-high",
+  "pitch": -6
  },
  "yoda": {
+  "error": 0.582,
   "length_scale": 1.111,
-  "piper": "es_MX-ald-medium",
-  "pitch": -3
+  "piper": "es_MX-claude-high",
+  "pitch": -4
+ },
+ "zenitsu": {
+  "error": 0.094,
+  "length_scale": 0.926,
+  "piper": "es_MX-laura-high",
+  "pitch": -1
+ },
+ "zero-two": {
+  "error": 0.11,
+  "length_scale": 1.0,
+  "piper": "es_MX-laura-high",
+  "pitch": 3
  }
 }

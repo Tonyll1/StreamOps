@@ -34,6 +34,8 @@ TARGETS: dict[str, tuple[float, float]] = {
     "rey-julien": (160, 1.05), "mojo-jojo": (150, 1.0), "shaggy": (180, 1.03), "po": (140, 1.03),
     "crash": (180, 1.05), "optimus": (90, 0.88), "doraemon": (290, 1.0), "shin-chan": (270, 1.03), "wario": (140, 1.0),
     "glados": (210, 0.95), "darth-vader": (85, 0.87), "mario": (240, 1.05), "luigi": (210, 1.03), "sonic": (180, 1.1), "mickey": (320, 1.0),
+    # anime
+    "teto-jp": (280, 1.03), "gojo": (125, 1.0), "sukuna": (105, 0.95), "toji": (105, 0.97), "geto": (115, 0.97), "nobara": (230, 1.05), "itadori": (150, 1.05), "megumi": (120, 0.97), "sasuke": (120, 0.97), "madara": (95, 0.92), "goku-jp": (290, 1.05), "luffy": (260, 1.08), "levi": (115, 0.97), "zenitsu": (190, 1.08), "nezuko": (290, 1.0), "anya": (330, 1.0), "light-yagami": (130, 1.0), "saitama": (125, 0.97), "zero-two": (240, 1.0), "frieren": (230, 0.93), "rei": (230, 0.93), "asuka": (260, 1.05), "killua": (250, 1.03), "nagatoro": (260, 1.05), "todoroki": (125, 0.97), "aizen": (110, 0.93), "jotaro": (100, 0.95), "giorno": (130, 1.0), "raiden-shogun": (220, 0.95), "hinata": (250, 0.97),
     "pato-donald": (270, 1.0), "kermit": (190, 1.0), "yoda": (150, 0.9), "kratos": (90, 0.9), "master-chief": (100, 0.95), "cartman": (240, 1.0),
 }
 

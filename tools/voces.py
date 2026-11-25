@@ -147,6 +147,40 @@ CATALOG.update({
     "cartman": _z("LordVessio/eric-cartman-rvc/resolve/main/CartmanClassico.zip", BASE_F, -2),
 })
 
+# Anime y videojuegos japoneses (modelos RVC de fans en Hugging Face, enlaces verificados nov-2026).
+CATALOG.update({
+    "teto-jp": ("rvc", [HF + "/srtapepsicola/KasaneTeto/resolve/main/%E9%87%8D%E9%9F%B3%E3%83%86%E3%83%88%20%28Kasane%20Teto%29%20%5BUtauloid%20%2B%20SynthesizerV%5D%20-%20Weights%20Model.zip"], BASE_F, 0),
+    "gojo": ("rvc", [HF + "/binant/SatoruGojo/resolve/main/model.pth", HF + "/binant/SatoruGojo/resolve/main/model.index"], BASE_M, 0),
+    "sukuna": ("rvc", [HF + "/Kuma6/Sukuna/resolve/main/Sukuna.zip"], BASE_M, 0),
+    "toji": ("rvc", [HF + "/Kuma6/Toji-Fushiguro/resolve/main/Toji.zip"], BASE_M, 0),
+    "geto": ("rvc", [HF + "/Kuma6/Suguru-Geto/resolve/main/Geto.zip"], BASE_M, 0),
+    "nobara": ("rvc", [HF + "/Kuma6/Nobara-Kugisaki/resolve/main/Nobara.zip"], BASE_F, 0),
+    "itadori": ("rvc", [HF + "/Kuma6/Yuji-Itadori/resolve/main/Yuji.zip"], BASE_M, 0),
+    "megumi": ("rvc", [HF + "/Kuma6/Megumi-Fushiguro/resolve/main/Megumi.zip"], BASE_M, 0),
+    "sasuke": ("rvc", [HF + "/binant/sasuke_male/resolve/main/model.pth", HF + "/binant/sasuke_male/resolve/main/model.index"], BASE_M, 0),
+    "madara": ("rvc", [HF + "/binant/madara_male/resolve/main/model.pth", HF + "/binant/madara_male/resolve/main/model.index"], BASE_M, 0),
+    "goku-jp": ("rvc", [HF + "/NicolasAdrian07/Son_Goku_JP/resolve/main/Son_Goku_JP.zip"], BASE_F, 0),
+    "luffy": ("rvc", [HF + "/RVCKrabs/LuffyRVC/resolve/main/Luffy.zip"], BASE_F, 0),
+    "levi": ("rvc", [HF + "/YoussefElReaper/Levi_Ackerman/resolve/main/Levi_Ackerman.zip"], BASE_M, 0),
+    "zenitsu": ("rvc", [HF + "/Kushh90/Zenitsu/resolve/main/ZenitsuRVC.zip"], BASE_F, 0),
+    "nezuko": ("rvc", [HF + "/Ms-Rose18/NezukoKamado/resolve/main/NezukoKamado.zip"], BASE_F, 0),
+    "anya": ("rvc", [HF + "/Kuma6/Anya-Forger/resolve/main/Anya%20Forger.zip"], BASE_F, 0),
+    "light-yagami": ("rvc", [HF + "/binant/yagami_light-male/resolve/main/model.pth", HF + "/binant/yagami_light-male/resolve/main/model.index"], BASE_M, 0),
+    "saitama": ("rvc", [HF + "/JoaozinModels/Saitama/resolve/main/Saitama.zip"], BASE_M, 0),
+    "zero-two": ("rvc", [HF + "/Nekochu/RVC2-zero-two_darling-in-the-franxx/resolve/main/weights/zeroTwo-v2.zip"], BASE_F, 0),
+    "frieren": ("rvc", [HF + "/ichayc/RVC_Frieren/resolve/main/frieren1.1.pth"], BASE_F, 0),
+    "rei": ("rvc", [HF + "/ReisenDev/ReiAyanami/resolve/main/ReiReiV2.pth", HF + "/ReisenDev/ReiAyanami/resolve/main/added_IVF304_Flat_nprobe_1_ReiReiV2_v2.index"], BASE_F, 0),
+    "asuka": ("rvc", [HF + "/YASIX/Ayanami_Rei_1995_2007-2009_RVCv2/resolve/main/ASUKA.zip"], BASE_F, 0),
+    "killua": ("rvc", [HF + "/Aditadot23/killua/resolve/main/killua.zip"], BASE_F, 0),
+    "nagatoro": ("rvc", [HF + "/DxDAkeno/Nagatoro/resolve/main/Nagatoro.zip"], BASE_F, 0),
+    "todoroki": ("rvc", [HF + "/geekdom-tr/Todoroki-Shoto/resolve/main/Todoroki-Shoto.zip"], BASE_M, 0),
+    "aizen": ("rvc", [HF + "/karbonatey/AizenRVC/resolve/main/SosukeAizen%20500%20Epoch%20RVC%20v2.zip"], BASE_M, 0),
+    "jotaro": ("rvc", [HF + "/rikurwyn/JotaroKujo/resolve/main/JotaroKujoJOJO.zip"], BASE_M, 0),
+    "giorno": ("rvc", [HF + "/coconutfarm/GiornoRVCv2rmvpe/resolve/main/Giorno.zip"], BASE_M, 0),
+    "raiden-shogun": ("rvc", [HF + "/Kamsaka/Raiden_Shogun/resolve/main/Raiden_Shogun.zip"], BASE_F, 0),
+    "hinata": ("rvc", [HF + "/lucasgamer469/hinata_rvc/resolve/main/hinata_RVC.zip"], BASE_F, 0),
+})
+
 
 def fetch(url: str) -> bytes:
     req = urllib.request.Request(url, headers={"User-Agent": "streamops-voices/1.0"})
