@@ -57,6 +57,63 @@ CATALOG: dict[str, tuple] = {
 }
 
 
+def _z(path: str, base: str, pitch: int) -> tuple:
+    return ("rvc", [HF + "/" + path], base, pitch)
+
+
+# Más personajes de ficción (modelos RVC de fans en Hugging Face, enlaces verificados nov-2026).
+CATALOG.update({
+    # --- doblaje latino ---
+    "vegeta": _z("Darkame/Vegeta-Rene-Garcia/resolve/main/vegetamodel.zip", BASE_M, 0),
+    "bart": _z("AITony70100/BartSimpsonESLA/resolve/main/BartSimpsonESLA_v1_400e.zip", BASE_F, 0),
+    "lisa": _z("AITony70100/LisaSimpsonESLA/resolve/main/LisaSimpsonESLA_v2_600e.zip", BASE_F, 2),
+    "ralph": _z("AITony70100/RalphWiggum/resolve/main/RalphWiggum_v2.zip", BASE_F, 0),
+    "moe": _z("AmanBOT/Moe/resolve/main/Moe.zip", BASE_M, 0),
+    "peter-griffin": _z("SkippyLean/PeterGriffinLATs1-s2/resolve/main/PeterGriffinS1-S2.zip", BASE_M, 0),
+    "rick": _z("Matius54/Rick_Sanchez_Latino/resolve/main/RVC-v2_Rick_Sanchez_Latino.zip", BASE_M, 0),
+    "morty": _z("Matius54/Morty_Smith_Latino/resolve/main/RVC-v2_Morty_Smith_Latino.zip", BASE_M, 5),
+    "oogway": _z("Matius54/Maestro_Oogway_Latino/resolve/main/RVC-v2_Maestro_Oogway_Latino.zip", BASE_M, -2),
+    "deadpool": _z("AlanOZ/DeadpoolPepeTonoMacias/resolve/main/Deadpool%20-%20Pepe%20To%C3%B1o%20Mac%C3%ADas%20%5BDeadpool%20-%20Latino%20_%20Latin%20American%20Spanish%5D%20-%20Weights%20Model.zip", BASE_M, 0),
+    "harley-quinn": _z("EthanRhys/Harley-Quinn-LA/resolve/main/Harley-Quinn-LA.zip", BASE_F, 0),
+    "naruto": _z("Darkame/Naruto-Latin-American/resolve/main/Narutomodel.zip", BASE_F, -2),
+    "woody": _z("TheRealheavy/WoodyLatinoRVC/resolve/main/WoodyLatino.zip", BASE_M, 0),
+    "buzz": _z("Kelpek/BuzzLightyearLatino/resolve/main/BuzzLightyearLatino.zip", BASE_M, 0),
+    "don-cangrejo": _z("EthanRhys/Don-Cangrejo-OG/resolve/main/Don-Cangrejo-OG.zip", BASE_M, 0),
+    "plankton": _z("AmanBOT/Plankton/resolve/main/Plankton.zip", BASE_M, 3),
+    "arenita": _z("EthanRhys/Arenita-Mejillas-LA/resolve/main/Arenita-Mejillas-LA.zip", BASE_F, 0),
+    "gru": _z("AmanBOT/Gru/resolve/main/Gru.zip", BASE_M, 0),
+    "skipper": _z("AmanBOT/Skipper/resolve/main/Skipper.zip", BASE_M, 0),
+    "rey-julien": _z("AmanBOT/Julien/resolve/main/Julien.zip", BASE_M, 3),
+    "mojo-jojo": _z("AmanBOT/MojoJojo/resolve/main/MojoJojo.zip", BASE_M, 2),
+    "shaggy": _z("AmanBOT/Shaggy/resolve/main/Shaggy.zip", BASE_M, 2),
+    "po": _z("AmanBOT/Po/resolve/main/Po.zip", BASE_M, 0),
+    "senor-barriga": _z("AmanBOT/SenorBarriga/resolve/main/SenorBarriga.zip", BASE_M, 0),
+    "jirafales": _z("AmanBOT/Jirafales/resolve/main/Jirafales.zip", BASE_M, -2),
+    "crash": _z("EthanRhys/Crash-Bandicoot-LA/resolve/main/Crash-Bandicoot-LA.zip", BASE_M, 4),
+    "optimus": _z("AleXDGoku/optimusprimeespanol/resolve/main/optimusprimeespanol.zip", BASE_M, -3),
+    # --- castellano ---
+    "doraemon": _z("Gonzaluigi/Doraemon-Esp-RVCv2/resolve/main/Doraemon-ESP-RMVPE-200.zip", BASE_M, 4),
+    "shin-chan": _z("Gonzaluigi/Modelos-RVC-Castellano/resolve/main/ShinChan-Castellano-Titan-150.zip", BASE_F, 0),
+    "wario": _z("EthanRhys/Wario-Castellano/resolve/main/Wario-Castellano.zip", BASE_M, 0),
+    # --- voces sintéticas y otros idiomas (hablarán español con su timbre) ---
+    "rin": _z("Miku-chan/KagamineRin/resolve/main/KagamineRin.zip", BASE_F, 4),
+    "len": _z("KenmaKIN101/LenKagamineV4_250epochs/resolve/main/LenKagamineV4.zip", BASE_F, 0),
+    "luka": _z("aple/MegurineLukaNativeRVC/resolve/main/luka_native_ai.zip", BASE_F, 0),
+    "glados": _z("Homiebear/GLaDOSV4/resolve/main/GLaDOS.zip", BASE_F, 0),
+    "darth-vader": _z("Homiebear/DarthVaderV4/resolve/main/Darth%20Vader%20V3.zip", BASE_M, -4),
+    "mario": _z("EthanRhys/Mario/resolve/main/Mario.zip", BASE_M, 4),
+    "luigi": _z("EthanRhys/Luigi/resolve/main/Luigi.zip", BASE_M, 3),
+    "sonic": _z("EthanRhys/Sonic-Ryan-Drummond/resolve/main/Sonic-Ryan-Drummond.zip", BASE_M, 3),
+    "mickey": _z("Coolwowsocoolwow/Mickey_Mouse/resolve/main/Mickey_Mouse_e160_s3200.zip", BASE_M, 8),
+    "pato-donald": _z("Coolwowsocoolwow/Donald_Duck/resolve/main/Donald_Duck_v2.zip", BASE_M, 4),
+    "kermit": _z("RosinoSuperRosa/Kermit-The-Frog/resolve/main/kermitthefrogjim.zip", BASE_M, 3),
+    "yoda": _z("bowlql/YodaRVC/resolve/main/Yoda.zip", BASE_M, 0),
+    "kratos": _z("Homiebear/KratosGoW3/resolve/main/KratosGoW3.zip", BASE_M, -4),
+    "master-chief": _z("Homiebear/MasterChief/resolve/main/MasterChief.zip", BASE_M, -2),
+    "cartman": _z("LordVessio/eric-cartman-rvc/resolve/main/CartmanClassico.zip", BASE_F, -2),
+})
+
+
 def fetch(url: str) -> bytes:
     req = urllib.request.Request(url, headers={"User-Agent": "streamops-voices/1.0"})
     with urllib.request.urlopen(req, timeout=120) as resp:
