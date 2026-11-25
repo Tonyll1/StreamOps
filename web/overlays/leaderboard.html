@@ -3,26 +3,31 @@
 <head>
 <meta charset="utf-8">
 <title>StreamOps · Top</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
 <style>
   html, body { margin: 0; background: transparent; overflow: hidden; }
-  body { font-family: "Segoe UI", system-ui, sans-serif; color: #fff; padding: 12px; }
+  body { font-family: Inter, "Segoe UI", system-ui, sans-serif; color: #fff; padding: 12px; --accent: #d946ef; }
   .board { width: min(420px, 100%); }
-  h1 { font-size: 20px; margin: 0 0 8px; text-transform: uppercase; letter-spacing: .08em;
-       text-shadow: 0 2px 6px rgba(0,0,0,.8); }
+  h1 { font: 700 18px "Space Grotesk", sans-serif; margin: 0 0 10px; text-transform: uppercase; letter-spacing: .1em;
+       display: inline-block; padding: 5px 14px; border-radius: 99px; background: linear-gradient(135deg, #ff5a6e, var(--accent), #7c5cff);
+       box-shadow: 0 6px 22px -6px var(--accent); }
+  h1:empty { display: none; }
   .row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; margin-bottom: 6px;
-         background: linear-gradient(90deg, rgba(20,20,40,.88), rgba(20,20,40,.55));
-         border-left: 4px solid var(--accent, #ff3b7f); border-radius: 10px;
-         transition: transform .4s ease, opacity .4s ease; }
-  .row.enter { transform: translateX(-24px); opacity: 0; }
-  .pos { width: 26px; font-weight: 800; font-size: 18px; text-align: center; color: var(--accent, #ff3b7f); }
+         background: linear-gradient(90deg, rgba(18,18,26,.92), rgba(18,18,26,.6)); backdrop-filter: blur(8px);
+         border: 1px solid rgba(255,255,255,.1); border-left: 4px solid var(--accent); border-radius: 14px;
+         transition: transform .55s cubic-bezier(.16,1,.3,1), opacity .45s ease; }
+  .row.enter { transform: translateX(-34px) scale(.94); opacity: 0; }
+  .row:nth-child(1) { border-left-color: #ffd54a; box-shadow: 0 0 26px -10px #ffd54a; }
+  .value.bump { animation: bump .5s cubic-bezier(.16,1,.3,1); } @keyframes bump { 40% { transform: scale(1.25); color: #ffd54a; } }
+  .pos { width: 26px; font-weight: 800; font-size: 18px; text-align: center; color: var(--accent); }
   .row:nth-child(1) .pos { color: #ffd54a; } .row:nth-child(2) .pos { color: #cfd8dc; } .row:nth-child(3) .pos { color: #ffab73; }
   .avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: #334; flex: none; }
   .name { flex: 1; font-weight: 600; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .value { font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; }
+  .value { font: 700 18px "Space Grotesk", sans-serif; font-variant-numeric: tabular-nums; display: inline-block; }
   .plat { font-size: 11px; opacity: .7; text-transform: uppercase; }
   /* Variante de un solo puesto: tarjeta grande */
   .single .row { flex-direction: column; text-align: center; padding: 16px; border-left: 0;
-                 border-top: 4px solid var(--accent, #ff3b7f); }
+                 border-top: 4px solid var(--accent); }
   .single .pos { display: none; } .single .avatar { width: 84px; height: 84px; }
   .single .name { font-size: 24px; flex: none; max-width: 100%; } .single .value { font-size: 28px; }
   .empty { opacity: .6; font-size: 14px; padding: 8px 12px; }
@@ -43,7 +48,7 @@
     params.has("title") ? params.get("title") : titles[metric] + (scope === "all" ? " (histórico)" : "");
   if (limit === 1) document.getElementById("board").classList.add("single");
   const rowsEl = document.getElementById("rows");
-  let known = new Set();
+  let known = new Set(), lastValues = {};
 
   function draw(rows) {
     rows = (rows || []).slice(0, limit);
@@ -52,8 +57,9 @@
     rowsEl.innerHTML = rows.map((r, i) => {
       const key = r.platform + ":" + r.name; next.add(key);
       const avatar = r.avatar ? `<img class="avatar" src="${esc(r.avatar)}" referrerpolicy="no-referrer" onerror="this.style.visibility='hidden'">` : '<div class="avatar"></div>';
+      const grew = known.has(key) && r.value > (lastValues[key] || 0); lastValues[key] = r.value;
       return `<div class="row ${known.has(key) ? "" : "enter"}"><div class="pos">${i + 1}</div>${avatar}
-        <div class="name">${esc(r.name)}</div><div class="value">${icons[metric]} ${fmt(r.value)}</div></div>`;
+        <div class="name">${esc(r.name)}</div><div class="value ${grew ? "bump" : ""}">${icons[metric]} ${fmt(r.value)}</div></div>`;
     }).join("");
     known = next;
     requestAnimationFrame(() => rowsEl.querySelectorAll(".enter").forEach((el) => el.classList.remove("enter")));

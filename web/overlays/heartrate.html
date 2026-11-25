@@ -3,12 +3,14 @@
 <head>
 <meta charset="utf-8">
 <title>StreamOps · Pulsómetro</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
 <style>
   html, body { margin: 0; background: transparent; overflow: hidden; }
-  body { font-family: "Segoe UI", system-ui, sans-serif; color: #fff; padding: 12px; }
+  body { font-family: "Space Grotesk", "Segoe UI", system-ui, sans-serif; color: #fff; padding: 12px; }
   .card { display: inline-flex; align-items: center; gap: 14px; padding: 12px 18px; border-radius: 16px;
-          background: rgba(15,15,30,.82); min-width: 300px; }
-  .heart { font-size: 46px; color: var(--c, #ff3b5c); animation: beat var(--beat, 1s) infinite; line-height: 1; }
+          background: rgba(18,18,26,.86); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.1);
+          box-shadow: 0 0 34px -14px var(--c, #ff3b5c); min-width: 300px; transition: box-shadow .6s, opacity .5s; }
+  .heart { font-size: 46px; color: var(--c, #ff3b5c); filter: drop-shadow(0 0 10px var(--c, #ff3b5c)); transition: color .6s; animation: beat var(--beat, 1s) infinite; line-height: 1; }
   @keyframes beat { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.28); } 30% { transform: scale(1); } 45% { transform: scale(1.14); } }
   .bpm { font-size: 46px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; min-width: 2.2ch; }
   .unit { font-size: 14px; opacity: .7; letter-spacing: .1em; }
