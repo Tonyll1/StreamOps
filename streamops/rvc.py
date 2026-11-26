@@ -29,6 +29,7 @@ class RvcConverter:
         self._gpu = torch.cuda.is_available()
         self._loader = BaseLoader(only_cpu=not self._gpu, hubert_path=None, rmvpe_path=None, preload_models=True)
         self._configured: dict[str, tuple] = {}
+        self.last_cold = True
         # La biblioteca solo recuerda un modelo y lo recarga al cambiar de voz;
         # aquí se guardan los últimos usados para que alternar personajes sea inmediato.
         self._loaded: OrderedDict[str, tuple] = OrderedDict()
@@ -40,6 +41,7 @@ class RvcConverter:
             raise FileNotFoundError(f"No existe el modelo RVC {model}")
         index = RVC_DIR / spec["index"] if spec.get("index") else None
         tag = model.stem
+        self.last_cold = tag not in self._configured  # la primera vez incluye cargar el modelo
         settings = (
             int(spec.get("pitch", 0)),
             str(index) if index and index.is_file() else "",

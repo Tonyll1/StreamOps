@@ -161,6 +161,7 @@ class App:
             "connectors": self.connector_status(),
             "bpm": self.connectors["heartrate"].bpm,
             "tts_queue": self.tts._queue.qsize(),
+            "tts": self.tts.status(),
             "audio": {"device": self.mixer.device_name, "ok": self.mixer._stream is not None, "reopens": self.mixer.reopens},
             "ts": time.time(),
             **self.store.snapshot(),

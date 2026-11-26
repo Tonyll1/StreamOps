@@ -118,7 +118,7 @@ class Reader:
             if not text:
                 return False
             event = dataclasses.replace(event, text=text)
-            return self.app.tts.say(render(spec.get("template") or "{text}", event), voice=self.voice_for(event))
+            return self.app.tts.say(render(spec.get("template") or "{text}", event), voice=self.voice_for(event), kind="chat")
         if not spec.get("enabled"):
             return False
         amount = event.value if event.type == "gift" else event.count

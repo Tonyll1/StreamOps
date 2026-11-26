@@ -156,6 +156,18 @@
               <label class="range">Voz <output id="o_tts_volume"></output><input type="range" id="tts_volume" min="0" max="2" step="0.05"></label>
               <label class="range">Alertas <output id="o_audio_alert_volume"></output><input type="range" id="audio_alert_volume" min="0" max="2" step="0.05"></label>
             </div>
+            <div class="card">
+              <div class="card-h"><h2>Voces de personaje <small id="charHint"></small></h2></div>
+              <label>Usar voces de personaje<select id="tts_character_mode">
+                <option value="auto">Automático (todo con tarjeta NVIDIA, solo alertas sin ella)</option>
+                <option value="all">En todo (chat y alertas)</option>
+                <option value="alerts">Solo en alertas (el chat usa la voz base)</option>
+                <option value="off">Nunca (solo voces naturales)</option></select></label>
+              <label class="sw"><input type="checkbox" id="tts_fast_fallback"><i></i>Si van lentas, el chat cambia solo a la voz base</label>
+              <div class="frow"><label>Frases en cola para cambiar<input type="number" id="tts_fallback_queue" min="1"></label>
+                <label>Máximo por frase (s)<input type="number" id="tts_fallback_seconds" min="1" step="0.5"></label></div>
+              <p class="hint">Las voces de personaje convierten la voz con RVC: con tarjeta NVIDIA tardan menos de un segundo, sin ella pueden tardar varios. La voz base es la voz natural de la que parte cada personaje.</p>
+            </div>
           </div>
           <div class="col">
             <div class="card">

@@ -15,6 +15,7 @@ import logging
 import queue
 import re
 import threading
+import time
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -44,7 +45,9 @@ def clean_text(text: str, max_chars: int, blocked: list[str]) -> str:
 class TTS:
     def __init__(self, app: "App") -> None:
         self.app = app
-        self._queue: queue.Queue[tuple[str, str | None]] = queue.Queue()
+        self._queue: queue.Queue[tuple[str, str | None, str]] = queue.Queue()
+        self._slow_until = 0.0  # hasta cuándo el chat usa la voz base por lentitud
+        self._fallback_logged = 0.0
         self._piper_cache: dict[str, object] = {}
         self._current: threading.Event | None = None
         self._rvc = None
@@ -102,14 +105,15 @@ class TTS:
         return None
 
     # ---- cola -----------------------------------------------------------
-    def say(self, text: str, voice: str | None = None) -> bool:
+    def say(self, text: str, voice: str | None = None, kind: str = "alert") -> bool:
+        """Encola una frase. kind="chat" para mensajes del chat, "alert" para todo lo demás."""
         cfg = self.app.config["tts"]
         if not cfg["enabled"] or self.app.mixer.muted:
             return False
         text = clean_text(text, int(cfg["max_chars"]), cfg.get("blocked_words", []))
         if not text or self._queue.qsize() >= int(cfg["max_queue"]):
             return False
-        self._queue.put((text, voice))
+        self._queue.put((text, voice, kind))
         return True
 
     def forget(self, name: str) -> None:
@@ -132,12 +136,12 @@ class TTS:
         playing: threading.Event | None = None
         playing_secs = 0.0
         while True:
-            text, voice = self._queue.get()
+            text, voice, kind = self._queue.get()
             if self.app.mixer.muted:
                 continue
             # La frase se genera mientras aún suena la anterior, para que no haya huecos.
             try:
-                samples, rate = self.synthesize(text, voice)
+                samples, rate = self.synthesize(text, voice, character=self._character_allowed(kind))
             except Exception:
                 logger.exception("[TTS] No se pudo sintetizar")
                 continue
@@ -160,6 +164,43 @@ class TTS:
                 resample(to_stereo(samples), rate), kind="tts", volume=float(self.app.config["tts"]["volume"])
             )
 
+    # ---- voces de personaje: cuándo se usan ------------------------------
+    def character_mode(self) -> str:
+        mode = str(self.app.config["tts"].get("character_mode") or "auto")
+        if mode == "auto":
+            return "all" if engine.has_nvidia() else "alerts"
+        return mode
+
+    def _character_allowed(self, kind: str) -> bool:
+        """Decide si esta frase pasa por RVC o se queda con la voz base (rápida)."""
+        mode = self.character_mode()
+        if mode == "off" or (mode == "alerts" and kind == "chat"):
+            return False
+        cfg = self.app.config["tts"]
+        if kind != "chat" or not cfg.get("fast_fallback", True):
+            return True
+        now = time.monotonic()
+        pending = self._queue.qsize()
+        if pending >= int(cfg.get("fallback_queue") or 3) or now < self._slow_until:
+            if now - self._fallback_logged > 30:
+                self._fallback_logged = now
+                logger.info("[TTS] Modo rápido: el chat usa la voz base (%d en cola)", pending)
+            return False
+        return True
+
+    def _note_speed(self, seconds: float) -> None:
+        limit = float(self.app.config["tts"].get("fallback_seconds") or 6)
+        if seconds > limit and self._rvc is not None and not self._rvc.last_cold:
+            self._slow_until = time.monotonic() + 120
+            logger.warning("[TTS] La voz de personaje tardó %.1f s; el chat usa la voz base por 2 min", seconds)
+
+    def status(self) -> dict:
+        return {
+            "character_mode": self.character_mode(),
+            "fast_mode": time.monotonic() < self._slow_until,
+            "gpu": engine.has_nvidia(),
+        }
+
     # ---- síntesis -------------------------------------------------------
     def _piper(self, name: str):
         voice = self._piper_cache.get(name)
@@ -171,7 +212,7 @@ class TTS:
             logger.info("[TTS] Voz Piper cargada: %s", name)
         return voice
 
-    def synthesize(self, text: str, voice_name: str | None = None) -> tuple[np.ndarray | None, int]:
+    def synthesize(self, text: str, voice_name: str | None = None, character: bool = True) -> tuple[np.ndarray | None, int]:
         spec = self._resolve(voice_name)
         if spec is None:
             logger.warning("[TTS] No hay voces en %s", VOICES)
@@ -190,9 +231,11 @@ class TTS:
         if not chunks:
             return None, 0
         samples = np.concatenate(chunks).astype(np.float32)
-        if spec.get("rvc") and engine.available():  # sin el motor suena la voz base
+        if character and spec.get("rvc") and engine.available():  # sin el motor suena la voz base
             try:
+                started = time.monotonic()
                 samples, rate = self._convert(samples, rate, spec["rvc"])
+                self._note_speed(time.monotonic() - started)
             except Exception:
                 logger.exception("[TTS] RVC falló; se usa la voz base")
         return samples, rate

@@ -25,7 +25,7 @@ Para generar el ejecutable: `.venv\Scripts\python.exe tools\build_exe.py` y `too
 |---|---|
 | Conexiones | TikTok (librería no oficial TikTokLive), Twitch (IRC anónimo: chat, bits, subs, raids), Kick (chat público) |
 | TTS | Piper local, cola serial, voz por espectador con `!voz nombre`, filtro de palabras |
-| Voces de personaje | Piper + conversión RVC (Miku, Teto, Bob Esponja, Homero, Loquendo…) |
+| Voces de personaje | Piper + conversión RVC (Miku, Teto, Bob Esponja, Homero, Loquendo…). Sin tarjeta NVIDIA se usan solo en alertas y el chat cambia solo a la voz base si van lentas |
 | Alertas | Regla = evento + condición → acciones: alerta con imagen/video/sonido, TTS, tecla, escena de OBS, webhook |
 | Overlays | Top donador, top donadores (sesión e histórico), top likes, top compartidos, alertas, pulsómetro |
 | Pulsómetro | Pulsoid (token), banda Bluetooth LE directa, o simulado |

@@ -78,6 +78,14 @@ DEFAULTS: dict = {
         "ignored_users": [],
         "only_users": [],
         "platforms": {"tiktok": True, "twitch": True, "kick": True},
+        # Dónde se usan las voces de personaje (RVC, pesadas sin GPU):
+        #   auto = en todo con tarjeta NVIDIA, solo en alertas sin ella
+        #   all = en todo · alerts = solo alertas (el chat usa la voz base) · off = nunca
+        "character_mode": "auto",
+        # Si las voces de personaje van lentas, el chat cambia solo a la voz base.
+        "fast_fallback": True,
+        "fallback_queue": 3,      # frases esperando a partir de las cuales el chat usa la voz base
+        "fallback_seconds": 6,    # una conversión más lenta que esto activa el modo rápido 2 min
         # Voz al azar (siempre la misma) para quien no tenga una asignada.
         "random_voices": False,
         "random_pool": "all",

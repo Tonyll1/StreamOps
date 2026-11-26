@@ -45,7 +45,7 @@ window.addEventListener("hashchange", () => show(location.hash.slice(1)));
 // ---- campos simples: id = seccion_clave ---------------------------------
 const FIELDS = ["tiktok_username","tiktok_autoconnect","twitch_channel","twitch_autoconnect","kick_channel","kick_chatroom_id","kick_autoconnect",
   "tts_enabled","tts_read_chat","tts_allow_voice_command","tts_chat_prefix","tts_volume","tts_max_chars","audio_alert_volume",
-  "tts_voice_command","tts_chat_min_chars","tts_user_cooldown","tts_skip_links","tts_skip_emoji_only","tts_skip_repeats",
+  "tts_voice_command","tts_chat_min_chars","tts_character_mode","tts_fast_fallback","tts_fallback_queue","tts_fallback_seconds","tts_user_cooldown","tts_skip_links","tts_skip_emoji_only","tts_skip_repeats",
   "heartrate_source","heartrate_pulsoid_token","heartrate_ble_address","hotkeys_mute_toggle","hotkeys_skip_tts","hotkeys_stop_all","obs_host","obs_port","obs_password"];
 const split = (id) => { const i = id.indexOf("_"); return [id.slice(0, i), id.slice(i + 1)]; };
 function showRange(el) { const out = $("o_" + el.id); if (out) out.textContent = Math.round(el.value * 100) + "%"; }
@@ -230,6 +230,7 @@ function addEvent(e) {
 StreamOps.connect((msg) => {
   if (msg.type === "state") {
     setMuted(msg.muted); setStatus(msg.connectors); setBpm(msg.bpm);
+    if (msg.tts && $("charHint")) $("charHint").textContent = (msg.tts.gpu ? "tarjeta NVIDIA detectada" : "sin tarjeta NVIDIA") + (msg.tts.fast_mode ? " · modo rápido activo" : "");
     const c = msg.counters || {};
     countUp("stat_coins", c.coins || 0); countUp("stat_likes", c.likes || 0); countUp("stat_follows", c.follows || 0); countUp("stat_shares", c.shares || 0);
     renderMiniTop(msg.session && msg.session.coins);
