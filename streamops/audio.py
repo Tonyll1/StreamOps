@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import threading
+import time
 from pathlib import Path
 
 import numpy as np
@@ -40,6 +41,13 @@ def to_stereo(samples: np.ndarray) -> np.ndarray:
     return samples.astype(np.float32, copy=False)
 
 
+def sd_abort() -> Exception:
+    """Excepción que detiene el stream de forma ordenada (el vigilante lo reabre)."""
+    import sounddevice as sd
+
+    return sd.CallbackAbort()
+
+
 def load_file(path: Path) -> np.ndarray:
     """Decodifica WAV/MP3/OGG/FLAC a float32 estéreo 48 kHz."""
     import soundfile as sf
@@ -60,46 +68,145 @@ class _Voice:
 
 
 class Mixer:
+    """Mezcla todo en un stream de salida y lo vuelve a abrir si se cae.
+
+    Un vigilante revisa que el callback de audio siga avanzando. Si el stream se
+    detiene (error en el callback, dispositivo reiniciado, audífonos desconectados,
+    FxSound reiniciado…), lo reabre. Los clips en curso siguen donde iban.
+    """
+
+    STALL_SECONDS = 2.0  # sin llamadas al callback por este tiempo = stream colgado
+    CHECK_SECONDS = 1.0
+
     def __init__(self, device: str = "") -> None:
         self._lock = threading.Lock()
+        self._open_lock = threading.Lock()
         self._voices: list[_Voice] = []
         self.muted = False
         self._stream = None
         self._device = device or None
         self._cache: dict[str, tuple[float, np.ndarray]] = {}
+        self._last_tick = 0.0
+        self._callback_error: str | None = None
+        self._running = False
+        self._failing = False
+        self.device_name = ""
+        self.reopens = 0
 
     def start(self) -> None:
-        try:
-            import sounddevice as sd
-
-            self._stream = sd.OutputStream(
-                samplerate=RATE,
-                channels=CHANNELS,
-                dtype="float32",
-                blocksize=960,
-                device=self._device,
-                callback=self._callback,
-            )
-            self._stream.start()
-            logger.info("[Audio] Salida abierta: %s", sd.query_devices(self._stream.device)["name"])
-        except Exception:
-            logger.exception("[Audio] No se pudo abrir la salida de audio")
-            self._stream = None
+        self._running = True
+        self._open()
+        threading.Thread(target=self._watchdog, name="audio-vigilante", daemon=True).start()
 
     def stop(self) -> None:
-        if self._stream is not None:
-            self._stream.stop()
-            self._stream.close()
-            self._stream = None
+        self._running = False
+        with self._open_lock:
+            self._close()
+
+    # ---- stream ---------------------------------------------------------
+    def _close(self) -> None:
+        stream, self._stream = self._stream, None
+        if stream is not None:
+            try:
+                stream.abort()
+            except Exception:
+                pass
+            try:
+                stream.close()
+            except Exception:
+                pass
+
+    def _open(self, refresh: bool = False) -> bool:
+        """Abre (o reabre) la salida. Con refresh relee la lista de dispositivos de Windows."""
+        import sounddevice as sd
+
+        with self._open_lock:
+            self._close()
+            if refresh:
+                try:  # PortAudio guarda la lista de dispositivos; hay que reiniciarlo para ver cambios
+                    sd._terminate()
+                    sd._initialize()
+                except Exception:
+                    logger.debug("[Audio] No se pudo reiniciar PortAudio", exc_info=True)
+            device = self._device
+            if device is not None:
+                try:
+                    sd.query_devices(device, kind="output")
+                except Exception:
+                    if not self._failing:
+                        logger.warning("[Audio] No se encontró el dispositivo «%s»; se usa el predeterminado", device)
+                    device = None
+            try:
+                stream = sd.OutputStream(
+                    samplerate=RATE,
+                    channels=CHANNELS,
+                    dtype="float32",
+                    blocksize=960,
+                    device=device,
+                    callback=self._callback,
+                )
+                self._callback_error = None
+                self._last_tick = time.monotonic()
+                stream.start()
+            except Exception:
+                if not self._failing:
+                    logger.exception("[Audio] No se pudo abrir la salida de audio; se reintentará")
+                self._failing = True
+                return False
+            self._stream = stream
+            self._failing = False
+            self.device_name = sd.query_devices(stream.device)["name"]
+            logger.info("[Audio] Salida abierta: %s", self.device_name)
+            return True
+
+    def _watchdog(self) -> None:
+        while self._running:
+            time.sleep(self.CHECK_SECONDS)
+            if not self._running:
+                break
+            stream = self._stream
+            reason = None
+            if stream is None:
+                reason = "sin salida"
+            elif self._callback_error:
+                reason = f"error en el audio: {self._callback_error}"
+            elif not stream.active:
+                reason = "la salida se detuvo"
+            elif time.monotonic() - self._last_tick > self.STALL_SECONDS:
+                reason = "la salida dejó de avanzar"
+            if reason is None:
+                continue
+            if not self._failing:
+                logger.warning("[Audio] %s; reabriendo la salida", reason)
+            if self._open(refresh=True):
+                self.reopens += 1
+            else:
+                self.clear()  # sin salida no se acumulan clips que nunca van a sonar
 
     def _callback(self, outdata, frames, _time, _status) -> None:
+        self._last_tick = time.monotonic()
+        try:
+            self._mix(outdata, frames)
+        except Exception as exc:  # un error aquí mataría el stream sin avisar
+            outdata.fill(0.0)
+            if self._callback_error is None:
+                self._callback_error = repr(exc)
+                logger.exception("[Audio] Error al mezclar")
+            raise sd_abort() from exc
+
+    def _mix(self, outdata, frames) -> None:
         outdata.fill(0.0)
         with self._lock:
             alive = []
             for voice in self._voices:
-                chunk = voice.samples[voice.pos : voice.pos + frames]
-                if len(chunk) and not self.muted:
-                    outdata[: len(chunk)] += chunk * voice.volume
+                try:
+                    chunk = voice.samples[voice.pos : voice.pos + frames]
+                    if len(chunk) and not self.muted:
+                        outdata[: len(chunk)] += chunk * voice.volume
+                except Exception:
+                    logger.exception("[Audio] Clip inválido descartado")
+                    voice.done.set()
+                    continue
                 voice.pos += frames
                 if voice.pos >= len(voice.samples):
                     voice.done.set()
@@ -111,7 +218,7 @@ class Mixer:
     def play(self, samples: np.ndarray, kind: str = "alert", volume: float = 1.0) -> threading.Event:
         """Agrega un clip a la mezcla. Devuelve un Event que se activa al terminar."""
         voice = _Voice(to_stereo(samples), kind, max(0.0, min(float(volume), 2.0)))
-        if self._stream is None or len(voice.samples) == 0:
+        if (self._stream is None and not self._running) or len(voice.samples) == 0:
             voice.done.set()
             return voice.done
         with self._lock:

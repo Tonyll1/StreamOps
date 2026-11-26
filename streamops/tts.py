@@ -130,6 +130,7 @@ class TTS:
 
     def _worker(self) -> None:
         playing: threading.Event | None = None
+        playing_secs = 0.0
         while True:
             text, voice = self._queue.get()
             if self.app.mixer.muted:
@@ -143,7 +144,7 @@ class TTS:
             if samples is None:
                 continue
             if playing is not None:
-                playing.wait(timeout=60)
+                playing.wait(timeout=playing_secs + 10)  # por si la salida de audio se cuelga
                 self.app.notify({"type": "tts_end"})
             if self.app.mixer.muted:
                 playing = None
@@ -154,6 +155,7 @@ class TTS:
                 "type": "tts", "text": text, "seconds": round(len(samples) / rate, 2),
                 "voice": shown or self.app.config["tts"].get("voice", ""),
             })
+            playing_secs = len(samples) / rate
             playing = self.app.mixer.play(
                 resample(to_stereo(samples), rate), kind="tts", volume=float(self.app.config["tts"]["volume"])
             )
